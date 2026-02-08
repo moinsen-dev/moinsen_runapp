@@ -1,0 +1,30 @@
+name: moinsen_runapp
+description: >-
+  Drop-in runApp() replacement with three-layer error catching,
+  deduplication, and beautiful error screens.
+version: 0.1.0
+
+repository: https://github.com/moinsen-dev/moinsen_runapp
+homepage: https://github.com/moinsen-dev/moinsen_runapp
+issue_tracker: https://github.com/moinsen-dev/moinsen_runapp/issues
+
+topics:
+  - error-handling
+  - crash-reporting
+  - runapp
+  - error-screen
+  - flutter
+
+environment:
+  sdk: ^3.10.8
+  flutter: ">=3.29.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  path_provider: ^2.1.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  very_good_analysis: ^10.1.0

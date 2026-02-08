@@ -1,0 +1,19 @@
+name: moinsen_runapp_example
+description: Example app demonstrating moinsen_runapp usage.
+publish_to: none
+
+environment:
+  sdk: ^3.10.8
+
+dependencies:
+  flutter:
+    sdk: flutter
+  moinsen_runapp:
+    path: ../
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
