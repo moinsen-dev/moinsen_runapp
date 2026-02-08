@@ -7,11 +7,38 @@ Drop-in `runApp()` replacement with three-layer error catching, deduplication, a
 
 ## Why?
 
-Flutter's default error handling lets errors slip through the cracks. `moinsen_runapp` catches **everything** across three layers — Flutter framework errors, platform dispatcher errors, and uncaught zone errors — deduplicates them, and shows your users a polished error screen instead of a red wall of text.
+Flutter's default error handling lets errors slip through the cracks. An uncaught async error kills your app. A widget build error shows the infamous red screen of death. Init failures crash before users see anything.
 
-**Your app always starts.** Init failures are caught and logged but never prevent launch.
+`moinsen_runapp` catches **everything** and keeps your app running.
+
+## Features
+
+- **Three-layer error catching** — Flutter framework errors, platform dispatcher errors, and zone-level uncaught errors. Nothing escapes.
+- **App always starts** — Init failures are caught and logged but never prevent launch.
+- **Error deduplication** — Identical errors within a configurable time window are counted, not repeated. No "1000 identical errors in 3 seconds."
+- **Beautiful release screens** — Three built-in variants (friendly, minimal, illustrated) with automatic dark/light mode support.
+- **Rich debug screen** — Expandable error tiles with source badges, dedup counts, full stack traces, and a "Copy All" button that generates a structured markdown bug report.
+- **Smart console logging** — Full output for the first few errors, then automatic burst compression to avoid flooding your console.
+- **Optional file logging** — Write errors to disk with automatic 1 MB rotation.
+- **External error reporting** — `onError` callback for forwarding to Sentry, Crashlytics, or any backend.
+- **Custom screen builders** — Replace any built-in screen with your own widget.
+- **Crash-proof error boundary** — Error screen renders as a sibling of your app (via `Stack`), so it works even if your entire widget tree fails to build.
+- **Zero configuration required** — Works out of the box with sensible defaults. One line to integrate.
+- **All Flutter platforms** — iOS, Android, web, macOS, Windows, Linux.
 
 ## Installation
+
+The package is not yet on pub.dev. Add it as a git dependency:
+
+```yaml
+dependencies:
+  moinsen_runapp:
+    git:
+      url: https://github.com/moinsen-dev/moinsen_runapp.git
+      ref: main
+```
+
+Once published to pub.dev:
 
 ```yaml
 dependencies:
@@ -30,6 +57,8 @@ void main() {
 }
 ```
 
+That's it. Your app now has three-layer error catching, deduplication, a debug error screen in development, and a friendly error screen in release mode.
+
 ## With Initialization
 
 Run async setup that might fail — the app still launches:
@@ -46,37 +75,49 @@ void main() {
 }
 ```
 
+If `init` throws, the error is caught, logged, and displayed — but `MyApp()` still runs.
+
 ## Configuration
 
 ```dart
 void main() {
   moinsenRunApp(
     config: const RunAppConfig(
-      // Deduplicate identical errors within this window
-      deduplicationWindow: Duration(seconds: 2),
-      // Max unique errors to track
-      maxLoggedErrors: 50,
-      // Write errors to a log file
+      releaseScreenVariant: ErrorScreenVariant.minimal,
       logToFile: true,
-      // Choose a release screen variant
-      releaseScreenVariant: ErrorScreenVariant.friendly,
     ),
+    onError: (error, stackTrace) {
+      Sentry.captureException(error, stackTrace: stackTrace);
+    },
     child: const MyApp(),
   );
 }
 ```
 
-### Release Screen Variants
+## Release Screen Variants
+
+All variants automatically adapt to dark and light mode.
 
 | Variant | Description |
 |---|---|
-| `ErrorScreenVariant.friendly` | Animated character with warm colors and "Oops!" message |
-| `ErrorScreenVariant.minimal` | Clean screen with icon, message, and retry button |
-| `ErrorScreenVariant.illustrated` | Full-screen CustomPainter illustration with animation |
+| `ErrorScreenVariant.friendly` | Wobbling animated character with purple tones and an "Oops!" message. Warm and approachable. |
+| `ErrorScreenVariant.minimal` | Clean screen with an error icon, "Something went wrong" message, and a retry button. No animation. |
+| `ErrorScreenVariant.illustrated` | Full-screen CustomPainter with a floating broken-link motif, bobbing animation, and decorative dots. |
 
-### Custom Error Screens
+## Debug Screen
 
-Override the built-in screens with your own:
+In debug mode, errors are shown in a dark developer-focused overlay with:
+
+- **Error tiles** — Each unique error as an expandable card showing runtime type, message, source badge (`flutter` / `platform` / `zone` / `init`), and dedup count.
+- **Full stack traces** — Tap to expand any error and see the complete stack trace.
+- **Copy All** — Generates a structured markdown bug report with Flutter diagnostics, app-filtered stack traces, and framework context traces. Paste directly into a GitHub issue.
+- **Dismiss** — Hide the overlay and continue using the app. Errors stop being captured while dismissed to avoid noise.
+- **Clear & Retry** — Reset all tracked errors and resume error capture.
+- **Kill App** — Force-quit for when you need a clean restart.
+
+## Custom Error Screens
+
+Override the built-in screens with your own. The builder receives the current `BuildContext` and the list of `ErrorEntry` objects:
 
 ```dart
 moinsenRunApp(
@@ -106,14 +147,51 @@ moinsenRunApp(
 );
 ```
 
+The `onError` callback fires for every error (including duplicates within the dedup window), so your external service gets the full picture.
+
 ## How It Works
 
-1. **Zone guard** — wraps everything in `runZonedGuarded` to catch async errors
-2. **Flutter error handler** — intercepts `FlutterError.onError` for widget build/layout/paint errors
-3. **Platform dispatcher** — catches dart:ui-level uncaught errors
-4. **Error bucket** — deduplicates by error hash (type + message + top stack frames)
-5. **Error observer** — `ChangeNotifier` that drives the UI, with deferred notifications to avoid build-phase conflicts
-6. **Error boundary widget** — wraps your app tree and shows the error screen overlay
+```
+┌─────────────────────────────────────────────────┐
+│  runZonedGuarded (layer 3: zone catch-all)      │
+│  ┌───────────────────────────────────────────┐  │
+│  │  PlatformDispatcher.onError (layer 2)     │  │
+│  │  ┌─────────────────────────────────────┐  │  │
+│  │  │  FlutterError.onError (layer 1)     │  │  │
+│  │  │  ┌───────────────────────────────┐  │  │  │
+│  │  │  │  Your App (ErrorBoundaryWidget)│  │  │  │
+│  │  │  └───────────────────────────────┘  │  │  │
+│  │  └─────────────────────────────────────┘  │  │
+│  └───────────────────────────────────────────┘  │
+└──────────────────────┬──────────────────────────┘
+                       │ All errors funnel into:
+                       ▼
+              ┌─────────────────┐
+              │   ErrorBucket   │ ← deduplication by hash
+              │  (type+msg+top  │   (type, message, top 3 frames)
+              │   stack frames) │
+              └────────┬────────┘
+                       │
+              ┌────────▼────────┐
+              │  ErrorObserver  │ ← ChangeNotifier with deferred
+              │                 │   notifications (Timer.run)
+              └────────┬────────┘
+                       │
+              ┌────────▼────────┐
+              │ ErrorBoundary   │ ← Stack-based: error screen is a
+              │ Widget (Stack)  │   sibling, not a descendant of your
+              │                 │   app — always renders independently
+              └─────────────────┘
+```
+
+1. **Zone guard** wraps everything in `runZonedGuarded`. This is the outermost net — catches async errors that escape both Flutter and the platform dispatcher.
+2. **Platform dispatcher** intercepts `PlatformDispatcher.onError` for dart:ui-level uncaught errors.
+3. **Flutter error handler** intercepts `FlutterError.onError` for widget build, layout, and paint errors.
+4. **Error bucket** deduplicates errors by hashing (runtime type + message + top 3 stack frames). Identical errors within the dedup window increment a counter instead of creating new entries.
+5. **Error observer** is a `ChangeNotifier` that drives the UI. Notifications are deferred via `Timer.run()` to avoid triggering rebuilds during Flutter's build/layout/paint phase.
+6. **Error boundary widget** wraps your app in a `Stack`. The error screen overlay is a *sibling* of your app widget — if your widget tree fails completely, the error screen still renders independently.
+
+When the error screen is displayed, error capture is automatically **paused** to avoid counting cascading duplicates. It resumes when the user taps "Dismiss" or "Clear & Retry."
 
 ## API Reference
 
@@ -122,32 +200,38 @@ moinsenRunApp(
 | Parameter | Type | Description |
 |---|---|---|
 | `child` | `Widget` | Your app widget (required) |
-| `init` | `Future<void> Function()?` | Async initialization callback |
-| `onError` | `void Function(Object, StackTrace)?` | External error reporting callback |
-| `config` | `RunAppConfig` | Configuration options |
+| `init` | `Future<void> Function()?` | Async initialization — errors caught but never prevent launch |
+| `onError` | `void Function(Object, StackTrace)?` | Callback for external error reporting |
+| `config` | `RunAppConfig` | Configuration (all optional, sensible defaults) |
 
 ### `RunAppConfig`
 
 | Parameter | Default | Description |
 |---|---|---|
 | `deduplicationWindow` | `Duration(seconds: 2)` | Time window for deduplicating identical errors |
-| `maxLoggedErrors` | `50` | Maximum unique errors to track |
-| `logToFile` | `false` | Write error summaries to a log file |
-| `logFilePath` | `null` | Explicit log file path (auto-resolved if null) |
-| `releaseScreenVariant` | `ErrorScreenVariant.friendly` | Built-in release screen variant |
-| `releaseScreenBuilder` | `null` | Custom release error screen builder |
-| `debugScreenBuilder` | `null` | Custom debug error screen builder |
+| `maxLoggedErrors` | `50` | Maximum unique errors to track before evicting oldest |
+| `logToFile` | `false` | Write error summaries to a log file on disk |
+| `logFilePath` | `null` | Explicit log file path (auto-resolved via `path_provider` if null) |
+| `releaseScreenVariant` | `ErrorScreenVariant.friendly` | Built-in release error screen variant |
+| `releaseScreenBuilder` | `null` | Custom release error screen — overrides `releaseScreenVariant` |
+| `debugScreenBuilder` | `null` | Custom debug error screen — overrides the built-in debug overlay |
 
-### `ErrorObserver`
+### `ErrorEntry`
 
-A `ChangeNotifier` exposed for advanced use cases:
+Each error tracked by the system is represented as an `ErrorEntry`. Custom screen builders receive `List<ErrorEntry>`.
 
-- `hasErrors` — whether any errors have been recorded
-- `totalErrorCount` — total error occurrences
-- `uniqueErrorCount` — number of unique errors
-- `errors` — current list of `ErrorEntry` objects
-- `pause()` / `resume()` — control error capture
-- `clearErrors()` — reset all tracked errors
+| Property | Type | Description |
+|---|---|---|
+| `hash` | `String` | Unique hash (error type + message + top stack frames) |
+| `error` | `Object` | The original error object |
+| `stackTrace` | `StackTrace` | Stack trace captured at the error site |
+| `source` | `String` | Where the error was caught: `'flutter'`, `'platform'`, `'zone'`, or `'init'` |
+| `diagnostics` | `String?` | Rich Flutter diagnostic context (for framework errors) |
+| `firstSeen` | `DateTime` | When this error was first seen |
+| `lastSeen` | `DateTime` | When this error was last seen (updated on duplicates) |
+| `count` | `int` | How many times this exact error has occurred |
+| `label` | `String` | Short human-readable label (truncated to 120 chars) |
+| `span` | `Duration` | Duration between first and last occurrence |
 
 ## License
 
