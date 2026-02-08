@@ -28,21 +28,15 @@ Flutter's default error handling lets errors slip through the cracks. An uncaugh
 
 ## Installation
 
-The package is not yet on pub.dev. Add it as a git dependency:
-
-```yaml
-dependencies:
-  moinsen_runapp:
-    git:
-      url: https://github.com/moinsen-dev/moinsen_runapp.git
-      ref: main
-```
-
-Once published to pub.dev:
-
 ```yaml
 dependencies:
   moinsen_runapp: ^0.1.0
+```
+
+Or run:
+
+```bash
+flutter pub add moinsen_runapp
 ```
 
 ## Quick Start
