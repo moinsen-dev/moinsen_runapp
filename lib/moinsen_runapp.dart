@@ -5,4 +5,9 @@ library;
 export 'src/config.dart';
 export 'src/error_entry.dart';
 export 'src/error_observer.dart';
-export 'src/runner.dart' show moinsenRunApp;
+export 'src/runner.dart'
+    show
+        moinsenReportError,
+        moinsenRunApp,
+        resetGlobalErrorCatcher,
+        setupTestErrorCatcher;

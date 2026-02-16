@@ -1,3 +1,10 @@
+## 0.2.0
+
+- Add `moinsenReportError()` top-level function for manually reporting caught errors through the full error pipeline (dedup, console log, file log, UI notification, external callback)
+- Add `ErrorCatcher.reportError()` public method as the underlying API
+- Add `setupTestErrorCatcher()` and `resetGlobalErrorCatcher()` test helpers
+- Errors from state management (Riverpod, Bloc, etc.), API calls, and background tasks can now be unified with the automatic three-layer error catching
+
 ## 0.1.0
 
 - Three-layer error catching: Flutter framework, platform dispatcher, and zone guard

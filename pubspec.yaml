@@ -2,7 +2,7 @@ name: moinsen_runapp
 description: >-
   Drop-in runApp() replacement with three-layer error catching,
   deduplication, and beautiful error screens.
-version: 0.1.0
+version: 0.2.0
 
 repository: https://github.com/moinsen-dev/moinsen_runapp
 homepage: https://github.com/moinsen-dev/moinsen_runapp

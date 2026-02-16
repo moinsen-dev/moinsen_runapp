@@ -5,11 +5,78 @@ import 'package:flutter/material.dart';
 import 'package:moinsen_runapp/src/config.dart';
 import 'package:moinsen_runapp/src/error_bucket.dart';
 import 'package:moinsen_runapp/src/error_catcher.dart';
+import 'package:moinsen_runapp/src/error_entry.dart';
 import 'package:moinsen_runapp/src/error_file_logger.dart';
 import 'package:moinsen_runapp/src/error_logger.dart';
 import 'package:moinsen_runapp/src/error_observer.dart';
 import 'package:moinsen_runapp/src/ui/error_boundary_widget.dart';
 import 'package:path_provider/path_provider.dart';
+
+// ---------------------------------------------------------------------------
+// Global error reporter
+// ---------------------------------------------------------------------------
+
+ErrorCatcher? _globalCatcher;
+
+/// Manually report a caught error through the moinsen_runapp error pipeline.
+///
+/// Use this for errors that are caught by application code (e.g. in Riverpod
+/// providers, API calls, or background tasks) and would otherwise not reach
+/// the three automatic error layers (Flutter, Platform, Zone).
+///
+/// The error passes through the full pipeline: deduplication, console logging,
+/// file logging (if configured), UI notification, and the external `onError`
+/// callback.
+///
+/// Returns the [ErrorEntry] if recorded, or `null` if the error system is not
+/// yet initialized (i.e. [moinsenRunApp] has not been called) or the error
+/// bucket is paused.
+///
+/// ```dart
+/// try {
+///   await api.fetchData();
+/// } catch (e, stack) {
+///   moinsenReportError(e, stack, source: 'api');
+///   // handle error locally...
+/// }
+/// ```
+ErrorEntry? moinsenReportError(
+  Object error,
+  StackTrace stackTrace, {
+  String source = 'app',
+  String? diagnostics,
+}) {
+  return _globalCatcher?.reportError(
+    error,
+    stackTrace,
+    source: source,
+    diagnostics: diagnostics,
+  );
+}
+
+/// Reset the global error catcher. Only for use in tests.
+@visibleForTesting
+void resetGlobalErrorCatcher() {
+  _globalCatcher = null;
+}
+
+/// Set up a minimal error catcher for testing [moinsenReportError].
+///
+/// Returns the [ErrorObserver] so tests can verify notifications.
+@visibleForTesting
+ErrorObserver setupTestErrorCatcher() {
+  final bucket = ErrorBucket();
+  final observer = ErrorObserver(bucket: bucket);
+  final logger = ErrorLogger();
+  _globalCatcher = ErrorCatcher(
+    bucket: bucket,
+    observer: observer,
+    logger: logger,
+  );
+  return observer;
+}
+
+// ---------------------------------------------------------------------------
 
 /// Drop-in replacement for `runApp` with three-layer error catching,
 /// error deduplication, and beautiful error screens.
@@ -42,6 +109,9 @@ void moinsenRunApp({
     logger: logger,
     onError: onError,
   );
+
+  // Make catcher available for moinsenReportError().
+  _globalCatcher = catcher;
 
   // 2. Run everything inside a guarded zone so that
   //    ensureInitialized() and runApp() share the same zone.

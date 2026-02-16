@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:moinsen_runapp/src/error_bucket.dart';
+import 'package:moinsen_runapp/src/error_entry.dart';
 import 'package:moinsen_runapp/src/error_file_logger.dart';
 import 'package:moinsen_runapp/src/error_logger.dart';
 import 'package:moinsen_runapp/src/error_observer.dart';
@@ -61,7 +62,23 @@ class ErrorCatcher {
     _handleError(error, stack, 'init');
   }
 
-  void _handleError(
+  /// Manually report a caught error through the full error pipeline.
+  ///
+  /// Use this for errors that are caught by application code (e.g. in
+  /// state management, API calls, or background tasks) and would otherwise
+  /// not reach the three automatic error layers.
+  ///
+  /// Returns the [ErrorEntry] if recorded, or `null` if the bucket is paused.
+  ErrorEntry? reportError(
+    Object error,
+    StackTrace stackTrace, {
+    String source = 'app',
+    String? diagnostics,
+  }) {
+    return _handleError(error, stackTrace, source, diagnostics: diagnostics);
+  }
+
+  ErrorEntry? _handleError(
     Object error,
     StackTrace stack,
     String source, {
@@ -75,7 +92,7 @@ class ErrorCatcher {
     );
 
     // Bucket is paused — silently drop the error.
-    if (entry == null) return;
+    if (entry == null) return null;
 
     // Log first occurrence to console.
     logger.log(entry);
@@ -88,5 +105,7 @@ class ErrorCatcher {
 
     // Forward to external reporter.
     onError?.call(error, stack);
+
+    return entry;
   }
 }
