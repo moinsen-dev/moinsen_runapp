@@ -1,3 +1,13 @@
+## 0.3.0
+
+- Add `moinsen_run` CLI tool for live LLM-assisted debugging via VM Service
+- Register 5 VM Service extensions in debug mode: `ext.moinsen.getErrors`, `clearErrors`, `getInfo`, `getLogs`, `getPrompt`
+- Add `LogBuffer` ring buffer for structured log capture (capacity 200)
+- Extract `generateBugReport()` from debug screen into reusable prompt generator
+- Add `ErrorEntry.toJson()` for structured error serialization
+- CLI commands: `start`, `stop`, `status`, `errors`, `logs`, `prompt`, `reload`, `restart`, `state`, `analyze`
+- All CLI output is structured JSON for machine consumption
+
 ## 0.2.0
 
 - Add `moinsenReportError()` top-level function for manually reporting caught errors through the full error pipeline (dedup, console log, file log, UI notification, external callback)
