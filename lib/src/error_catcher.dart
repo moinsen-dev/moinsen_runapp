@@ -6,6 +6,7 @@ import 'package:moinsen_runapp/src/error_entry.dart';
 import 'package:moinsen_runapp/src/error_file_logger.dart';
 import 'package:moinsen_runapp/src/error_logger.dart';
 import 'package:moinsen_runapp/src/error_observer.dart';
+import 'package:moinsen_runapp/src/log_buffer.dart';
 
 /// Callback for external error reporting (Sentry, Crashlytics, etc.).
 typedef ErrorCallback = void Function(Object error, StackTrace stackTrace);
@@ -20,6 +21,7 @@ class ErrorCatcher {
     required this.observer,
     required this.logger,
     this.fileLogger,
+    this.logBuffer,
     this.onError,
   });
 
@@ -27,6 +29,7 @@ class ErrorCatcher {
   final ErrorObserver observer;
   final ErrorLogger logger;
   final ErrorFileLogger? fileLogger;
+  final LogBuffer? logBuffer;
   final ErrorCallback? onError;
 
   /// Set up FlutterError.onError for framework errors.
@@ -96,6 +99,13 @@ class ErrorCatcher {
 
     // Log first occurrence to console.
     logger.log(entry);
+
+    // Feed into ring buffer for VM Service access.
+    logBuffer?.add(
+      level: 'error',
+      message: '${entry.error.runtimeType}: ${entry.label}',
+      source: entry.source,
+    );
 
     // Write to file if configured.
     fileLogger?.log(entry);

@@ -9,7 +9,9 @@ import 'package:moinsen_runapp/src/error_entry.dart';
 import 'package:moinsen_runapp/src/error_file_logger.dart';
 import 'package:moinsen_runapp/src/error_logger.dart';
 import 'package:moinsen_runapp/src/error_observer.dart';
+import 'package:moinsen_runapp/src/log_buffer.dart';
 import 'package:moinsen_runapp/src/ui/error_boundary_widget.dart';
+import 'package:moinsen_runapp/src/vm_extensions.dart';
 import 'package:path_provider/path_provider.dart';
 
 // ---------------------------------------------------------------------------
@@ -103,10 +105,12 @@ void moinsenRunApp({
   );
   final observer = ErrorObserver(bucket: bucket);
   final logger = ErrorLogger();
+  final logBuffer = LogBuffer();
   final catcher = ErrorCatcher(
     bucket: bucket,
     observer: observer,
     logger: logger,
+    logBuffer: logBuffer,
     onError: onError,
   );
 
@@ -125,7 +129,16 @@ void moinsenRunApp({
         ..setupFlutterErrorHandler()
         ..setupPlatformDispatcher();
 
-      // 5. Override ErrorWidget.builder for inline widget errors.
+      // 5. Register VM Service extensions for CLI/tooling access.
+      if (kDebugMode) {
+        registerMoinsenExtensions(
+          bucket: bucket,
+          observer: observer,
+          logBuffer: logBuffer,
+        );
+      }
+
+      // 6. Override ErrorWidget.builder for inline widget errors.
       //    Wrapped in Directionality because this widget can render
       //    anywhere in the tree — including above MaterialApp — where
       //    no Directionality ancestor exists.
@@ -150,7 +163,7 @@ void moinsenRunApp({
         );
       };
 
-      // 6. Set up file logger if configured.
+      // 7. Set up file logger if configured.
       if (config.logToFile) {
         final path =
             config.logFilePath ?? await _resolveLogPath();
@@ -160,7 +173,7 @@ void moinsenRunApp({
         }
       }
 
-      // 7. Execute init callback if provided.
+      // 8. Execute init callback if provided.
       //    Errors are caught and logged but NEVER prevent app start.
       if (init != null) {
         try {
@@ -170,7 +183,7 @@ void moinsenRunApp({
         }
       }
 
-      // 8. ALWAYS run the app — regardless of init errors.
+      // 9. ALWAYS run the app — regardless of init errors.
       runApp(
         ErrorBoundaryWidget(
           observer: observer,
