@@ -16,3 +16,9 @@ pubspec.lock
 
 # Example app locks
 example/pubspec.lock
+
+# Worktrees
+.worktrees/
+
+# CLI state file
+.moinsen_run.json
