@@ -2,11 +2,15 @@ import 'dart:io';
 
 import 'package:args/command_runner.dart';
 import 'package:moinsen_runapp/src/cli/commands/analyze_command.dart';
+import 'package:moinsen_runapp/src/cli/commands/context_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/errors_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/logs_command.dart';
+import 'package:moinsen_runapp/src/cli/commands/navigate_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/prompt_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/reload_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/restart_command.dart';
+import 'package:moinsen_runapp/src/cli/commands/route_command.dart';
+import 'package:moinsen_runapp/src/cli/commands/screenshot_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/start_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/state_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/status_command.dart';
@@ -22,10 +26,14 @@ Future<void> main(List<String> args) async {
     ..addCommand(ErrorsCommand())
     ..addCommand(PromptCommand())
     ..addCommand(LogsCommand())
+    ..addCommand(NavigateCommand())
     ..addCommand(ReloadCommand())
     ..addCommand(RestartCommand())
     ..addCommand(StateCommand())
     ..addCommand(AnalyzeCommand())
+    ..addCommand(ContextCommand())
+    ..addCommand(RouteCommand())
+    ..addCommand(ScreenshotCommand())
     ..addCommand(StopCommand());
 
   try {

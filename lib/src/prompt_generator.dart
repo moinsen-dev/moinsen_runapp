@@ -207,6 +207,97 @@ String _cleanDiagnostics(String raw) {
   return cleaned.join('\n');
 }
 
+/// Generate an enhanced report that includes logs and route context
+/// alongside errors.
+///
+/// This extends [generateBugReport] with additional app context
+/// for richer LLM-assisted debugging.
+String generateEnhancedReport({
+  required List<ErrorEntry> errors,
+  required String platform,
+  List<Map<String, dynamic>> recentLogs = const [],
+  String? currentRoute,
+  bool observerInstalled = false,
+  List<Map<String, dynamic>> routeHistory = const [],
+}) {
+  final buffer = StringBuffer();
+
+  // Header
+  buffer
+    ..writeln('# Enhanced Bug Report')
+    ..writeln()
+    ..writeln(
+      '**Generated:** '
+      '${DateTime.now().toIso8601String().substring(0, 19)}',
+    )
+    ..writeln('**Platform:** $platform');
+
+  if (currentRoute != null) {
+    buffer.writeln('**Current Route:** $currentRoute');
+  }
+
+  final totalCount = errors.fold(0, (sum, e) => sum + e.count);
+  buffer
+    ..writeln(
+      '**Errors:** ${errors.length} unique, $totalCount total',
+    )
+    ..writeln();
+
+  // Error details (reuse the existing _formatEntry helper)
+  for (var i = 0; i < errors.length; i++) {
+    _formatEntry(buffer, errors[i], i, errors.length);
+  }
+
+  // Recent logs section
+  if (recentLogs.isNotEmpty) {
+    buffer
+      ..writeln('---')
+      ..writeln()
+      ..writeln('## Recent Logs (${recentLogs.length})')
+      ..writeln();
+    for (final log in recentLogs) {
+      final ts = log['timestamp'] as String? ?? '';
+      final time = ts.length >= 19 ? ts.substring(11, 19) : ts;
+      final level = log['level'] as String? ?? '?';
+      final source = log['source'] as String? ?? '';
+      final msg = log['message'] as String? ?? '';
+      buffer.writeln(
+        '- `[$time]` **$level** '
+        '${source.isNotEmpty ? '($source) ' : ''}$msg',
+      );
+    }
+    buffer.writeln();
+  }
+
+  // Navigation history
+  if (routeHistory.isNotEmpty) {
+    buffer
+      ..writeln('---')
+      ..writeln()
+      ..writeln('## Navigation History')
+      ..writeln();
+    for (final entry in routeHistory) {
+      final ts = entry['timestamp'] as String? ?? '';
+      final time = ts.length >= 19 ? ts.substring(11, 19) : ts;
+      buffer.writeln(
+        '- $time ${entry['action']} '
+        '${entry['routeName'] ?? '(unnamed)'}',
+      );
+    }
+    buffer.writeln();
+  } else if (!observerInstalled) {
+    buffer
+      ..writeln('---')
+      ..writeln()
+      ..writeln('## Navigation')
+      ..writeln()
+      ..writeln('_MoinsenNavigatorObserver not installed._')
+      ..writeln();
+  }
+
+  return buffer.toString();
+}
+
 /// Human-readable description of the error source layer.
 String _sourceDescription(String source) {
   return switch (source) {

@@ -1,3 +1,39 @@
+## 1.0.0 — LLM Debug Bridge
+
+The first stable release — moinsen_runapp is now the universal LLM debug bridge for Flutter apps.
+
+### Added
+
+- **`moinsenLog()`** — App-level logging API. Surface navigation events, API calls, and state changes to external tooling. Messages appear in `ext.moinsen.getLogs` and the `moinsen_run logs` CLI command.
+- **`MoinsenNavigatorObserver`** — Drop-in `NavigatorObserver` that tracks route changes. Exposes current route, navigation history, and programmatic navigation via `pushNamed()` / `pop()`.
+- **Screenshot capture** — New `ext.moinsen.screenshot` VM Service extension and `moinsen_run screenshot` CLI command. Captures the current screen as PNG using the render view's layer tree directly (no `RepaintBoundary` wrapper needed).
+- **Route information** — New `ext.moinsen.getRoute` VM Service extension and `moinsen_run route` CLI command. Returns current route, observer status, and navigation history.
+- **Navigation control** — New `ext.moinsen.navigate` VM Service extension and `moinsen_run navigate` CLI command. Push named routes or pop programmatically (debug mode only).
+- **Context command** — New `moinsen_run context` CLI command — the "tell me everything" endpoint. Aggregates errors, logs, route info, optional screenshot, and widget tree into a single LLM-ready markdown document. Supports `--with-screenshot`, `--with-tree`, `--log-count`, and `--format` (markdown/json).
+- **Enhanced prompt** — `ext.moinsen.getPrompt` now includes recent logs and navigation history alongside errors for richer LLM-assisted debugging.
+- **`RunAppConfig.logBufferCapacity`** — Configure log buffer size (default: 200).
+- **`RunAppConfig.screenshotMaxDimension`** — Cap screenshot resolution for memory safety.
+
+### CLI commands (6 new, 16 total)
+
+| Command | Description |
+|---------|------------|
+| `screenshot` | Capture a screenshot from the running app |
+| `route` | Get the current route and navigation history |
+| `navigate` | Push a route or pop the current route |
+| `context` | Get a comprehensive LLM-ready context report |
+| *(existing)* | `start`, `stop`, `status`, `errors`, `logs`, `prompt`, `reload`, `restart`, `state`, `analyze` |
+
+### VM Service extensions (4 new, 9 total)
+
+| Extension | Description |
+|-----------|------------|
+| `ext.moinsen.screenshot` | Capture screen as base64 PNG |
+| `ext.moinsen.getRoute` | Current route and navigation history |
+| `ext.moinsen.navigate` | Push/pop routes programmatically |
+| `ext.moinsen.getContext` | Aggregated context (errors + logs + route) |
+| *(existing)* | `getErrors`, `clearErrors`, `getInfo`, `getLogs`, `getPrompt` |
+
 ## 0.3.0
 
 - Add `moinsen_run` CLI tool for live LLM-assisted debugging via VM Service

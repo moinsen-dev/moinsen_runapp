@@ -96,18 +96,18 @@ void main() {
         source: 'flutter',
       );
 
-      final json = handleGetPrompt(bucket);
+      final json = handleGetPrompt(bucket, logBuffer);
       final data = jsonDecode(json) as Map<String, dynamic>;
 
-      expect(data['prompt'], contains('# Bug Report'));
+      expect(data['prompt'], contains('# Enhanced Bug Report'));
       expect(data['prompt'], contains('StateError'));
     });
 
     test('getPrompt returns empty report when no errors', () {
-      final json = handleGetPrompt(bucket);
+      final json = handleGetPrompt(bucket, logBuffer);
       final data = jsonDecode(json) as Map<String, dynamic>;
 
-      expect(data['prompt'], contains('# Bug Report'));
+      expect(data['prompt'], contains('# Enhanced Bug Report'));
       expect(data['prompt'], contains('0 unique'));
     });
   });

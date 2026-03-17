@@ -19,6 +19,7 @@ import 'package:path_provider/path_provider.dart';
 // ---------------------------------------------------------------------------
 
 ErrorCatcher? _globalCatcher;
+LogBuffer? _globalLogBuffer;
 
 /// Manually report a caught error through the moinsen_runapp error pipeline.
 ///
@@ -79,6 +80,31 @@ ErrorObserver setupTestErrorCatcher() {
 }
 
 // ---------------------------------------------------------------------------
+// Global app-level logging
+// ---------------------------------------------------------------------------
+
+/// Log a message through the moinsen_runapp pipeline.
+///
+/// Messages appear in `ext.moinsen.getLogs` and the `moinsen_run logs` CLI
+/// command. Use this to surface app-level information (navigation events,
+/// API calls, state changes) to external tooling and LLM-assisted debugging.
+void moinsenLog(String message, {String? source, String level = 'info'}) {
+  _globalLogBuffer?.add(level: level, message: message, source: source);
+}
+
+/// Reset the global log buffer. Only for use in tests.
+@visibleForTesting
+void resetGlobalLogBuffer() {
+  _globalLogBuffer = null;
+}
+
+/// Set up a log buffer for testing [moinsenLog].
+@visibleForTesting
+void setupTestLogBuffer(LogBuffer buffer) {
+  _globalLogBuffer = buffer;
+}
+
+// ---------------------------------------------------------------------------
 
 /// Drop-in replacement for `runApp` with three-layer error catching,
 /// error deduplication, and beautiful error screens.
@@ -105,7 +131,7 @@ void moinsenRunApp({
   );
   final observer = ErrorObserver(bucket: bucket);
   final logger = ErrorLogger();
-  final logBuffer = LogBuffer();
+  final logBuffer = LogBuffer(capacity: config.logBufferCapacity);
   final catcher = ErrorCatcher(
     bucket: bucket,
     observer: observer,
@@ -114,8 +140,9 @@ void moinsenRunApp({
     onError: onError,
   );
 
-  // Make catcher available for moinsenReportError().
+  // Make catcher and log buffer available for top-level API functions.
   _globalCatcher = catcher;
+  _globalLogBuffer = logBuffer;
 
   // 2. Run everything inside a guarded zone so that
   //    ensureInitialized() and runApp() share the same zone.

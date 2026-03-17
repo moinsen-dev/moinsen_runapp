@@ -26,9 +26,11 @@ class RunAppConfig {
     this.maxLoggedErrors = 50,
     this.logToFile = false,
     this.logFilePath,
+    this.logBufferCapacity = 200,
     this.releaseScreenVariant = ErrorScreenVariant.friendly,
     this.releaseScreenBuilder,
     this.debugScreenBuilder,
+    this.screenshotMaxDimension,
   });
 
   /// Time window for deduplicating identical errors.
@@ -36,6 +38,9 @@ class RunAppConfig {
 
   /// Maximum number of unique errors to track before discarding oldest.
   final int maxLoggedErrors;
+
+  /// Maximum number of entries the app-level log buffer retains.
+  final int logBufferCapacity;
 
   /// Whether to write error summaries to a log file.
   final bool logToFile;
@@ -52,4 +57,9 @@ class RunAppConfig {
 
   /// Fully custom debug error screen. Overrides the default developer UI.
   final ErrorScreenBuilder? debugScreenBuilder;
+
+  /// Maximum dimension (in physical pixels) for screenshots.
+  ///
+  /// If null (the default), no limit is applied.
+  final int? screenshotMaxDimension;
 }

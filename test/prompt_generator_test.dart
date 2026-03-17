@@ -98,4 +98,122 @@ void main() {
       expect(report, contains('**Occurrences:** 5'));
     });
   });
+
+  group('generateEnhancedReport', () {
+    test('generates header with platform', () {
+      final report = generateEnhancedReport(
+        errors: [],
+        platform: 'macos',
+      );
+
+      expect(report, contains('# Enhanced Bug Report'));
+      expect(report, contains('**Platform:** macos'));
+      expect(report, contains('**Errors:** 0 unique, 0 total'));
+    });
+
+    test('includes current route in header when provided', () {
+      final report = generateEnhancedReport(
+        errors: [],
+        platform: 'macos',
+        currentRoute: '/home',
+      );
+
+      expect(report, contains('**Current Route:** /home'));
+    });
+
+    test('includes error details', () {
+      final entry = ErrorEntry(
+        hash: 'abc',
+        error: StateError('enhanced error'),
+        stackTrace: StackTrace.current,
+        source: 'flutter',
+        firstSeen: DateTime(2026, 2, 27),
+      );
+
+      final report = generateEnhancedReport(
+        errors: [entry],
+        platform: 'macos',
+      );
+
+      expect(report, contains('## Error 1/1: StateError'));
+      expect(report, contains('enhanced error'));
+      expect(report, contains('**Occurrences:** 1'));
+    });
+
+    test('includes recent logs section', () {
+      final report = generateEnhancedReport(
+        errors: [],
+        platform: 'macos',
+        recentLogs: [
+          {
+            'timestamp': '2026-02-27T10:30:45.000',
+            'level': 'error',
+            'source': 'flutter',
+            'message': 'Something broke',
+          },
+          {
+            'timestamp': '2026-02-27T10:30:46.000',
+            'level': 'info',
+            'message': 'Recovered',
+          },
+        ],
+      );
+
+      expect(report, contains('## Recent Logs (2)'));
+      expect(report, contains('**error** (flutter) Something broke'));
+      expect(report, contains('**info** Recovered'));
+    });
+
+    test('includes navigation history', () {
+      final report = generateEnhancedReport(
+        errors: [],
+        platform: 'macos',
+        observerInstalled: true,
+        routeHistory: [
+          {
+            'action': 'push',
+            'routeName': '/home',
+            'timestamp': '2026-02-27T10:30:00.000',
+          },
+          {
+            'action': 'push',
+            'routeName': '/settings',
+            'timestamp': '2026-02-27T10:31:00.000',
+          },
+        ],
+      );
+
+      expect(report, contains('## Navigation History'));
+      expect(report, contains('push /home'));
+      expect(report, contains('push /settings'));
+    });
+
+    test('shows "not installed" when observer not installed', () {
+      final report = generateEnhancedReport(
+        errors: [],
+        platform: 'macos',
+        observerInstalled: false,
+      );
+
+      expect(report, contains('## Navigation'));
+      expect(
+        report,
+        contains('_MoinsenNavigatorObserver not installed._'),
+      );
+    });
+
+    test('empty logs and history are omitted', () {
+      final report = generateEnhancedReport(
+        errors: [],
+        platform: 'macos',
+        observerInstalled: true,
+        recentLogs: [],
+        routeHistory: [],
+      );
+
+      expect(report, isNot(contains('## Recent Logs')));
+      expect(report, isNot(contains('## Navigation History')));
+      expect(report, isNot(contains('not installed')));
+    });
+  });
 }

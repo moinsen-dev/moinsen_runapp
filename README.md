@@ -3,28 +3,30 @@
 [![pub package](https://img.shields.io/pub/v/moinsen_runapp.svg)](https://pub.dev/packages/moinsen_runapp)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-Drop-in `runApp()` replacement with three-layer error catching, deduplication, beautiful error screens, and a CLI tool for live LLM-assisted debugging.
+The universal LLM debug bridge for Flutter. Drop-in `runApp()` replacement with three-layer error catching, app-level logging, navigation tracking, screenshot capture, and a CLI tool for live LLM-assisted debugging.
 
 ## Why?
 
 Flutter's default error handling lets errors slip through the cracks. An uncaught async error kills your app. A widget build error shows the infamous red screen of death. Init failures crash before users see anything.
 
-`moinsen_runapp` catches **everything** and keeps your app running.
+`moinsen_runapp` catches **everything**, keeps your app running, and gives LLM tools like Claude Code full visibility into your app's state.
 
 ## Features
 
 - **Three-layer error catching** — Flutter framework errors, platform dispatcher errors, and zone-level uncaught errors. Nothing escapes.
 - **App always starts** — Init failures are caught and logged but never prevent launch.
-- **Error deduplication** — Identical errors within a configurable time window are counted, not repeated. No "1000 identical errors in 3 seconds."
+- **Error deduplication** — Identical errors within a configurable time window are counted, not repeated.
 - **Beautiful release screens** — Three built-in variants (friendly, minimal, illustrated) with automatic dark/light mode support.
-- **Rich debug screen** — Expandable error tiles with source badges, dedup counts, full stack traces, and a "Copy All" button that generates a structured markdown bug report.
-- **Smart console logging** — Full output for the first few errors, then automatic burst compression to avoid flooding your console.
+- **Rich debug screen** — Expandable error tiles with source badges, dedup counts, full stack traces, and a "Copy All" button.
+- **App-level logging** — `moinsenLog()` surfaces navigation events, API calls, and state changes to external tooling.
+- **Navigation tracking** — `MoinsenNavigatorObserver` tracks route changes, exposes history, and enables programmatic navigation.
+- **Screenshot capture** — Capture the current screen as PNG via VM Service or CLI. No `RepaintBoundary` needed.
+- **LLM context command** — `moinsen_run context` aggregates errors, logs, routes, screenshots, and widget tree into one markdown document.
+- **CLI tool** — `moinsen_run` wraps `flutter run` and exposes 16 commands for querying and controlling your app.
+- **9 VM Service extensions** — `ext.moinsen.*` endpoints let any tool query app state live via the Dart VM Service Protocol.
+- **Smart console logging** — Full output for the first few errors, then automatic burst compression.
 - **Optional file logging** — Write errors to disk with automatic 1 MB rotation.
 - **External error reporting** — `onError` callback for forwarding to Sentry, Crashlytics, or any backend.
-- **Custom screen builders** — Replace any built-in screen with your own widget.
-- **Crash-proof error boundary** — Error screen renders as a sibling of your app (via `Stack`), so it works even if your entire widget tree fails to build.
-- **CLI tool for LLM debugging** — `moinsen_run` wraps `flutter run` and exposes errors, logs, and app state as structured JSON. Query errors, trigger hot reload, or get an LLM-ready bug report — all from the terminal.
-- **VM Service extensions** — Five `ext.moinsen.*` extensions registered in debug mode let tools like Claude Code query app state live via the Dart VM Service Protocol.
 - **Zero configuration required** — Works out of the box with sensible defaults. One line to integrate.
 - **All Flutter platforms** — iOS, Android, web, macOS, Windows, Linux.
 
@@ -32,7 +34,7 @@ Flutter's default error handling lets errors slip through the cracks. An uncaugh
 
 ```yaml
 dependencies:
-  moinsen_runapp: ^0.3.0
+  moinsen_runapp: ^1.0.0
 ```
 
 Or run:
@@ -43,7 +45,7 @@ flutter pub add moinsen_runapp
 
 ## Quick Start
 
-Replace your `runApp()` call:
+### 1. Replace `runApp()`
 
 ```dart
 import 'package:moinsen_runapp/moinsen_runapp.dart';
@@ -53,7 +55,23 @@ void main() {
 }
 ```
 
-That's it. Your app now has three-layer error catching, deduplication, a debug error screen in development, and a friendly error screen in release mode.
+### 2. Add the navigator observer
+
+```dart
+MaterialApp(
+  navigatorObservers: [MoinsenNavigatorObserver.instance],
+  // ...
+)
+```
+
+### 3. Log from your app
+
+```dart
+moinsenLog('User tapped checkout', source: 'cart', level: 'info');
+moinsenLog('API returned 500', source: 'api', level: 'error');
+```
+
+That's it. Your app now has error catching, log capture, route tracking, and full LLM debugging support.
 
 ## With Initialization
 
@@ -81,6 +99,8 @@ void main() {
     config: const RunAppConfig(
       releaseScreenVariant: ErrorScreenVariant.minimal,
       logToFile: true,
+      logBufferCapacity: 500,          // default: 200
+      screenshotMaxDimension: 1080,    // cap screenshot resolution
     ),
     onError: (error, stackTrace) {
       Sentry.captureException(error, stackTrace: stackTrace);
@@ -135,8 +155,14 @@ dart run moinsen_runapp:moinsen_run prompt
 # Get recent log entries (default: last 50)
 dart run moinsen_runapp:moinsen_run logs --last 20
 
-# Check if the app is running
-dart run moinsen_runapp:moinsen_run status
+# Get current route and navigation history
+dart run moinsen_runapp:moinsen_run route
+
+# Capture a screenshot (saved as PNG)
+dart run moinsen_runapp:moinsen_run screenshot
+
+# Get full LLM-ready context (errors + logs + route + optional screenshot)
+dart run moinsen_runapp:moinsen_run context --with-screenshot --with-tree
 ```
 
 ### Control the running app
@@ -148,6 +174,12 @@ dart run moinsen_runapp:moinsen_run reload
 # Trigger hot restart
 dart run moinsen_runapp:moinsen_run restart
 
+# Push a named route
+dart run moinsen_runapp:moinsen_run navigate --push /settings
+
+# Pop the current route
+dart run moinsen_runapp:moinsen_run navigate --pop
+
 # Dump the widget tree
 dart run moinsen_runapp:moinsen_run state
 
@@ -155,14 +187,7 @@ dart run moinsen_runapp:moinsen_run state
 dart run moinsen_runapp:moinsen_run stop
 ```
 
-### Static analysis
-
-```bash
-# Run flutter analyze with structured JSON output
-dart run moinsen_runapp:moinsen_run analyze
-```
-
-### All commands
+### All CLI commands
 
 | Command | Description |
 |---|---|
@@ -170,6 +195,10 @@ dart run moinsen_runapp:moinsen_run analyze
 | `errors` | Get deduplicated error report from running app |
 | `prompt` | Get LLM-ready markdown bug report |
 | `logs` | Get recent log entries (`--last N`, default 50) |
+| `route` | Get current route and navigation history |
+| `screenshot` | Capture screen as PNG |
+| `navigate` | Push a named route (`--push`) or pop (`--pop`) |
+| `context` | Full LLM-ready context (`--with-screenshot`, `--with-tree`, `--log-count`, `--format`) |
 | `status` | Check if app is running, show device and uptime |
 | `reload` | Trigger hot reload |
 | `restart` | Trigger hot restart (resets app state) |
@@ -179,7 +208,7 @@ dart run moinsen_runapp:moinsen_run analyze
 
 ## VM Service Extensions
 
-In debug and profile mode, `moinsenRunApp()` automatically registers five VM Service extensions:
+In debug and profile mode, `moinsenRunApp()` automatically registers nine VM Service extensions:
 
 | Extension | Returns |
 |---|---|
@@ -187,13 +216,49 @@ In debug and profile mode, `moinsenRunApp()` automatically registers five VM Ser
 | `ext.moinsen.clearErrors` | `{cleared: true}` |
 | `ext.moinsen.getInfo` | `{package, errorCount, uniqueErrors, platform}` |
 | `ext.moinsen.getLogs` | `{logs: [...], capacity, size}` |
-| `ext.moinsen.getPrompt` | `{prompt: "# Bug Report\n..."}` |
+| `ext.moinsen.getPrompt` | `{prompt: "# Enhanced Bug Report\n..."}` |
+| `ext.moinsen.screenshot` | `{png: "<base64>", width, height}` |
+| `ext.moinsen.getRoute` | `{currentRoute, observerInstalled, history: [...]}` |
+| `ext.moinsen.navigate` | `{success: true}` (params: `action`, `route`) |
+| `ext.moinsen.getContext` | `{context: "# App Context Report\n..."}` |
 
 These extensions are what the CLI tool uses under the hood. Any tool that speaks the Dart VM Service Protocol can call them directly.
 
+## App-Level Logging
+
+Use `moinsenLog()` to surface app events to external tooling:
+
+```dart
+// Log with level and source for filtering
+moinsenLog('Payment completed', source: 'checkout', level: 'info');
+moinsenLog('Token refresh failed', source: 'auth', level: 'error');
+
+// Simple debug logging
+moinsenLog('Widget rebuilt with new state');
+```
+
+Logs are stored in a ring buffer (default capacity: 200) and served via `ext.moinsen.getLogs` and the `moinsen_run logs` CLI command. They are also included in `prompt` and `context` output.
+
+## Navigation Tracking
+
+Add `MoinsenNavigatorObserver.instance` to your app's navigator:
+
+```dart
+MaterialApp(
+  navigatorObservers: [MoinsenNavigatorObserver.instance],
+  home: const HomePage(),
+)
+```
+
+This enables:
+- `moinsen_run route` — view current route and navigation history
+- `moinsen_run navigate --push /settings` — push routes programmatically
+- `moinsen_run navigate --pop` — pop the current route
+- Route info in `prompt` and `context` output
+
 ## Custom Error Screens
 
-Override the built-in screens with your own. The builder receives the current `BuildContext` and the list of `ErrorEntry` objects:
+Override the built-in screens with your own:
 
 ```dart
 moinsenRunApp(
@@ -217,13 +282,10 @@ Forward errors to Sentry, Crashlytics, or any other service:
 moinsenRunApp(
   onError: (error, stackTrace) {
     Sentry.captureException(error, stackTrace: stackTrace);
-    // or: FirebaseCrashlytics.instance.recordError(error, stackTrace);
   },
   child: const MyApp(),
 );
 ```
-
-The `onError` callback fires for every error (including duplicates within the dedup window), so your external service gets the full picture.
 
 ## How It Works
 
@@ -232,9 +294,11 @@ The `onError` callback fires for every error (including duplicates within the de
   ┌──────────────────┐                ┌──────────────────────────────────┐
   │ moinsen_run       │──starts──────▶│ runZonedGuarded (layer 3)        │
   │ moinsen_run errors│               │  PlatformDispatcher.onError (2)  │
-  │ moinsen_run reload│──VM Service──▶│  FlutterError.onError (1)        │
-  │ moinsen_run prompt│               │  Your App (ErrorBoundaryWidget)  │
-  │ moinsen_run logs  │               └──────────────┬───────────────────┘
+  │ moinsen_run prompt│──VM Service──▶│  FlutterError.onError (1)        │
+  │ moinsen_run logs  │               │  Your App (ErrorBoundaryWidget)  │
+  │ moinsen_run route │               │  MoinsenNavigatorObserver        │
+  │ moinsen_run screensht             │  moinsenLog() → LogBuffer        │
+  │ moinsen_run context│              └──────────────┬───────────────────┘
   └────────┬─────────┘                               │
            │                                All errors funnel into:
   .moinsen_run.json                                  ▼
@@ -242,17 +306,17 @@ The `onError` callback fires for every error (including duplicates within the de
                                       │      ErrorBucket        │ ← dedup by hash
                                       └────────────┬────────────┘
                                                    │
-                              ┌─────────────────────┼──────────────────────┐
-                              ▼                     ▼                      ▼
-                    ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
-                    │  ErrorObserver   │  │    LogBuffer     │  │  VM Extensions   │
-                    │ (ChangeNotifier) │  │ (ring buffer,    │  │ ext.moinsen.*    │
-                    └────────┬─────────┘  │  capacity 200)   │  │ (5 endpoints)    │
-                             │            └──────────────────┘  └──────────────────┘
-                    ┌────────▼─────────┐
-                    │  ErrorBoundary   │ ← Stack-based: error screen
-                    │  Widget (Stack)  │   renders independently
-                    └──────────────────┘
+                      ┌────────────────┬───────────┼──────────────────────┐
+                      ▼                ▼           ▼                      ▼
+            ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
+            │  ErrorObserver   │  │    LogBuffer     │  │  VM Extensions   │
+            │ (ChangeNotifier) │  │ (ring buffer,    │  │ ext.moinsen.*    │
+            └────────┬─────────┘  │  capacity 200)   │  │ (9 endpoints)    │
+                     │            └──────────────────┘  └──────────────────┘
+            ┌────────▼─────────┐         ▲
+            │  ErrorBoundary   │         │
+            │  Widget (Stack)  │   ScreenshotService
+            └──────────────────┘   NavigatorObserver
 ```
 
 1. **Zone guard** wraps everything in `runZonedGuarded`. This is the outermost net — catches async errors that escape both Flutter and the platform dispatcher.
@@ -261,9 +325,10 @@ The `onError` callback fires for every error (including duplicates within the de
 4. **Error bucket** deduplicates errors by hashing (runtime type + message + top 3 stack frames). Identical errors within the dedup window increment a counter instead of creating new entries.
 5. **Error observer** is a `ChangeNotifier` that drives the UI. Notifications are deferred via `Timer.run()` to avoid triggering rebuilds during Flutter's build/layout/paint phase.
 6. **Error boundary widget** wraps your app in a `Stack`. The error screen overlay is a *sibling* of your app widget — if your widget tree fails completely, the error screen still renders independently.
-
-7. **Log buffer** is a fixed-capacity ring buffer (200 entries) that captures structured log entries for the `ext.moinsen.getLogs` extension.
-8. **VM Service extensions** expose five `ext.moinsen.*` endpoints in debug/profile mode, allowing external tools to query errors, logs, and app metadata live via the Dart VM Service Protocol.
+7. **Log buffer** is a fixed-capacity ring buffer that captures structured log entries from `moinsenLog()` calls.
+8. **Navigator observer** tracks route changes and enables programmatic navigation via VM Service extensions.
+9. **Screenshot service** captures the current screen directly from the render view's layer tree.
+10. **VM Service extensions** expose nine `ext.moinsen.*` endpoints in debug/profile mode, allowing external tools to query errors, logs, routes, screenshots, and aggregated context live via the Dart VM Service Protocol.
 
 When the error screen is displayed, error capture is automatically **paused** to avoid counting cascading duplicates. It resumes when the user taps "Dismiss" or "Clear & Retry."
 
@@ -284,11 +349,40 @@ When the error screen is displayed, error capture is automatically **paused** to
 |---|---|---|
 | `deduplicationWindow` | `Duration(seconds: 2)` | Time window for deduplicating identical errors |
 | `maxLoggedErrors` | `50` | Maximum unique errors to track before evicting oldest |
+| `logBufferCapacity` | `200` | Maximum entries the app-level log buffer retains |
 | `logToFile` | `false` | Write error summaries to a log file on disk |
 | `logFilePath` | `null` | Explicit log file path (auto-resolved via `path_provider` if null) |
+| `screenshotMaxDimension` | `null` | Cap screenshot resolution in physical pixels |
 | `releaseScreenVariant` | `ErrorScreenVariant.friendly` | Built-in release error screen variant |
 | `releaseScreenBuilder` | `null` | Custom release error screen — overrides `releaseScreenVariant` |
 | `debugScreenBuilder` | `null` | Custom debug error screen — overrides the built-in debug overlay |
+
+### `moinsenLog`
+
+```dart
+void moinsenLog(String message, {String? source, String level = 'info'})
+```
+
+Log a message to the shared log buffer. Messages appear in `ext.moinsen.getLogs`, `moinsen_run logs`, and are included in prompt/context output.
+
+### `MoinsenNavigatorObserver`
+
+| Property / Method | Description |
+|---|---|
+| `MoinsenNavigatorObserver.instance` | Shared singleton instance |
+| `currentRoute` | Current route name (or `null`) |
+| `history` | Unmodifiable list of `RouteRecord` entries |
+| `pushNamed(route)` | Push a named route via the observer's navigator |
+| `pop()` | Pop the current route |
+
+### `RouteRecord`
+
+| Property | Type | Description |
+|---|---|---|
+| `action` | `String` | `'push'`, `'pop'`, `'replace'`, or `'remove'` |
+| `routeName` | `String?` | Route name from `RouteSettings.name` |
+| `arguments` | `String?` | String representation of route arguments |
+| `timestamp` | `DateTime` | When this navigation occurred |
 
 ### `ErrorEntry`
 
@@ -307,15 +401,9 @@ Each error tracked by the system is represented as an `ErrorEntry`. Custom scree
 | `label` | `String` | Short human-readable label (truncated to 120 chars) |
 | `span` | `Duration` | Duration between first and last occurrence |
 
-**Methods:**
-
-| Method | Returns | Description |
-|---|---|---|
-| `toJson()` | `Map<String, dynamic>` | Serialize to JSON (used by VM extensions and CLI) |
-
 ### `moinsenReportError`
 
-Manually report caught errors through the full pipeline (dedup, console log, file log, UI notification, external callback):
+Manually report caught errors through the full pipeline:
 
 ```dart
 try {
@@ -325,20 +413,19 @@ try {
 }
 ```
 
-### `generateBugReport`
+### `ScreenshotService`
 
-Generate a structured markdown bug report from error entries:
+| Method | Description |
+|---|---|
+| `ScreenshotService.capture({pixelRatio, maxDimension})` | Capture current screen as PNG. Returns `ScreenshotResult?` |
 
-```dart
-import 'package:moinsen_runapp/src/prompt_generator.dart';
+### `ScreenshotResult`
 
-final report = generateBugReport(
-  errors: errorObserver.errors,
-  platform: defaultTargetPlatform.name,
-);
-```
-
-This is the same function used by the debug screen's "Copy All" button and the `ext.moinsen.getPrompt` VM extension.
+| Property | Type | Description |
+|---|---|---|
+| `bytes` | `Uint8List` | PNG image bytes |
+| `width` | `int` | Image width in physical pixels |
+| `height` | `int` | Image height in physical pixels |
 
 ## License
 

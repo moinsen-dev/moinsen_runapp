@@ -88,6 +88,23 @@ class MoinsenVmClient {
     }
   }
 
+  /// Call a moinsen extension with optional parameters.
+  Future<Map<String, dynamic>?> callMoinsenWithParams(
+    String name, {
+    Map<String, String>? params,
+  }) async {
+    final isolateId = await _mainIsolateId();
+    if (isolateId == null) return null;
+
+    final response = await _service.callServiceExtension(
+      name,
+      isolateId: isolateId,
+      args: params,
+    );
+    return parseExtensionResponse(response.json?['result'] as String?)
+        as Map<String, dynamic>?;
+  }
+
   /// Disconnect from the VM Service.
   Future<void> dispose() async {
     await _service.dispose();
