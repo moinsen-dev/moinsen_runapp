@@ -55,18 +55,12 @@ class ContextCommand extends VmCommand {
         argResults?['screenshot-path'] as String? ?? './context-screenshot.png';
     final format = argResults?['format'] as String? ?? 'markdown';
 
-    // Gather data from multiple VM extensions.
-    final results = await Future.wait([
-      client.callMoinsen('ext.moinsen.getErrors'),
-      client.callMoinsen('ext.moinsen.getLogs'),
-      client.callMoinsen('ext.moinsen.getRoute'),
-      client.callMoinsen('ext.moinsen.getInfo'),
-    ]);
-
-    final errorsData = results[0];
-    final logsData = results[1];
-    final routeData = results[2];
-    final infoData = results[3];
+    // Gather data from VM extensions sequentially.
+    // Parallel calls can cause issues with the VM Service protocol.
+    final errorsData = await client.callMoinsen('ext.moinsen.getErrors');
+    final logsData = await client.callMoinsen('ext.moinsen.getLogs');
+    final routeData = await client.callMoinsen('ext.moinsen.getRoute');
+    final infoData = await client.callMoinsen('ext.moinsen.getInfo');
 
     // Optional: screenshot
     String? savedScreenshotPath;

@@ -28,8 +28,7 @@ class MoinsenVmClient {
       name,
       isolateId: isolateId,
     );
-    return parseExtensionResponse(response.json?['result'] as String?)
-        as Map<String, dynamic>?;
+    return _parseResponse(response);
   }
 
   /// Trigger hot reload on the main isolate.
@@ -101,13 +100,30 @@ class MoinsenVmClient {
       isolateId: isolateId,
       args: params,
     );
-    return parseExtensionResponse(response.json?['result'] as String?)
-        as Map<String, dynamic>?;
+    return _parseResponse(response);
   }
 
   /// Disconnect from the VM Service.
   Future<void> dispose() async {
     await _service.dispose();
+  }
+
+  /// Parse a VM Service extension response.
+  ///
+  /// The VM Service returns extension results in `response.json` as a
+  /// decoded Map. Our extensions encode their data as a JSON string via
+  /// `ServiceExtensionResponse.result(jsonEncode(...))`, which the VM
+  /// Service then decodes back into a Map. So `response.json` already
+  /// contains the parsed data directly.
+  Map<String, dynamic>? _parseResponse(Response response) {
+    final json = response.json;
+    if (json == null) return null;
+
+    // The VM Service protocol adds a 'type' key to every response.
+    // Our extension data is everything else in the map.
+    // In practice, response.json IS our parsed data (the VM Service
+    // decodes the JSON string we pass to ServiceExtensionResponse.result).
+    return Map<String, dynamic>.from(json);
   }
 
   Future<String?> _mainIsolateId() async {
