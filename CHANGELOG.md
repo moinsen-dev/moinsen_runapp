@@ -1,6 +1,6 @@
-## 1.0.0 — LLM Debug Bridge
+## 0.4.0 — LLM Debug Bridge
 
-The first stable release — moinsen_runapp is now the universal LLM debug bridge for Flutter apps.
+moinsen_runapp is now the universal LLM debug bridge for Flutter apps.
 
 ### Added
 
