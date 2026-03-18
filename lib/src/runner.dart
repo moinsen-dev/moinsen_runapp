@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer' as developer;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -85,12 +86,21 @@ ErrorObserver setupTestErrorCatcher() {
 
 /// Log a message through the moinsen_runapp pipeline.
 ///
-/// Messages appear in `ext.moinsen.getLogs` and the `moinsen_run logs` CLI
-/// command. Use this to surface app-level information (navigation events,
-/// API calls, state changes) to external tooling and LLM-assisted debugging.
+/// Messages appear in `ext.moinsen.getLogs`, the `moinsen_run logs` CLI
+/// command, **and** the debug console via `dart:developer.log`.
 void moinsenLog(String message, {String? source, String level = 'info'}) {
   _globalLogBuffer?.add(level: level, message: message, source: source);
+
+  // Also emit to the debug console so logs are visible in IDE/terminal.
+  final prefix = source != null ? '[$source] ' : '';
+  developer.log('$prefix$message', name: 'moinsen', level: _logLevel(level));
 }
+
+int _logLevel(String level) => switch (level) {
+      'error' => 1000,
+      'warning' => 900,
+      _ => 800,
+    };
 
 /// Reset the global log buffer. Only for use in tests.
 @visibleForTesting
