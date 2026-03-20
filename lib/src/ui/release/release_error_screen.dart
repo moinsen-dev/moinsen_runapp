@@ -22,14 +22,14 @@ class ReleaseErrorScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return switch (variant) {
       ErrorScreenVariant.friendly => FriendlyErrorScreen(
-          onRetry: onRetry,
-        ),
+        onRetry: onRetry,
+      ),
       ErrorScreenVariant.minimal => MinimalErrorScreen(
-          onRetry: onRetry,
-        ),
+        onRetry: onRetry,
+      ),
       ErrorScreenVariant.illustrated => IllustratedErrorScreen(
-          onRetry: onRetry,
-        ),
+        onRetry: onRetry,
+      ),
     };
   }
 }

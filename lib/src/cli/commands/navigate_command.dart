@@ -26,14 +26,18 @@ class NavigateCommand extends VmCommand {
     final route = rest.isNotEmpty ? rest.first : null;
 
     if (!pop && (route == null || route.isEmpty)) {
-      stdout.writeln(jsonEncode({
-        'navigated': false,
-        'error': 'Usage: moinsen_run navigate <route> or --pop',
-      }));
+      stdout.writeln(
+        jsonEncode({
+          'navigated': false,
+          'error': 'Usage: moinsen_run navigate <route> or --pop',
+        }),
+      );
       return;
     }
 
     final params = <String, String>{
+      // Null-aware element (if?) requires Dart 3.8+; keep explicit check
+      // for backward compatibility.
       // ignore: use_null_aware_elements
       if (route != null) 'route': route,
       if (pop) 'pop': 'true',
@@ -44,8 +48,10 @@ class NavigateCommand extends VmCommand {
       params: params,
     );
 
-    stdout.writeln(jsonEncode(
-      result ?? {'navigated': false, 'error': 'No response from app'},
-    ));
+    stdout.writeln(
+      jsonEncode(
+        result ?? {'navigated': false, 'error': 'No response from app'},
+      ),
+    );
   }
 }

@@ -192,7 +192,6 @@ void main() {
       final report = generateEnhancedReport(
         errors: [],
         platform: 'macos',
-        observerInstalled: false,
       );
 
       expect(report, contains('## Navigation'));

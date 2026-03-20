@@ -25,8 +25,7 @@ class ErrorBoundaryWidget extends StatefulWidget {
   final RunAppConfig config;
 
   @override
-  State<ErrorBoundaryWidget> createState() =>
-      _ErrorBoundaryWidgetState();
+  State<ErrorBoundaryWidget> createState() => _ErrorBoundaryWidgetState();
 }
 
 class _ErrorBoundaryWidgetState extends State<ErrorBoundaryWidget> {

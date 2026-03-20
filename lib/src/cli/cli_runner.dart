@@ -38,10 +38,10 @@ class CliRunner {
         .transform(const SystemEncoding().decoder)
         .transform(const LineSplitter())
         .listen((line) {
-      stdout.writeln(
-        formatJsonLine(type: 'stderr', data: {'message': line}),
-      );
-    });
+          stdout.writeln(
+            formatJsonLine(type: 'stderr', data: {'message': line}),
+          );
+        });
 
     // Handle signals for clean shutdown.
     ProcessSignal.sigint.watch().listen((_) => stop());
@@ -72,11 +72,14 @@ class CliRunner {
         device: _device ?? 'unknown',
       );
       stdout.writeln(
-        formatJsonLine(type: 'started', data: {
-          'vmServiceUri': _vmServiceUri,
-          'pid': _process!.pid,
-          'device': _device ?? 'unknown',
-        }),
+        formatJsonLine(
+          type: 'started',
+          data: {
+            'vmServiceUri': _vmServiceUri,
+            'pid': _process!.pid,
+            'device': _device ?? 'unknown',
+          },
+        ),
       );
     }
 

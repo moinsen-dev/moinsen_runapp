@@ -126,14 +126,12 @@ void _formatEntry(
 
 /// Filters stack frames to only app-relevant ones.
 List<String> _filterAppFrames(List<String> frames) {
-  return frames
-      .where((line) {
-        if (line.contains('package:flutter/')) return false;
-        if (line.contains('dart:')) return false;
-        if (line.contains('package:moinsen_runapp/')) return false;
-        return true;
-      })
-      .toList();
+  return frames.where((line) {
+    if (line.contains('package:flutter/')) return false;
+    if (line.contains('dart:')) return false;
+    if (line.contains('package:moinsen_runapp/')) return false;
+    return true;
+  }).toList();
 }
 
 /// Extracts a human-readable location from a stack frame line.
@@ -220,10 +218,7 @@ String generateEnhancedReport({
   bool observerInstalled = false,
   List<Map<String, dynamic>> routeHistory = const [],
 }) {
-  final buffer = StringBuffer();
-
-  // Header
-  buffer
+  final buffer = StringBuffer()
     ..writeln('# Enhanced Bug Report')
     ..writeln()
     ..writeln(

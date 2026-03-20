@@ -37,14 +37,15 @@ class ScreenshotService {
 
     // Cap resolution if maxDimension is specified.
     if (maxDimension != null && maxDimension > 0) {
-      final maxSide =
-          size.width > size.height ? size.width : size.height;
+      final maxSide = size.width > size.height ? size.width : size.height;
       final maxPhysical = maxSide * effectiveRatio;
       if (maxPhysical > maxDimension) {
         effectiveRatio = maxDimension / maxSide;
       }
     }
 
+    // RenderView.layer is protected but there is no public API to capture
+    // the scene to an image; direct layer access is the standard approach.
     // ignore: invalid_use_of_protected_member
     final layer = renderView.layer as OffsetLayer?;
     if (layer == null) return null;
@@ -57,8 +58,7 @@ class ScreenshotService {
         pixelRatio: effectiveRatio,
       );
 
-      final byteData =
-          await image.toByteData(format: ui.ImageByteFormat.png);
+      final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
       image.dispose();
 
       if (byteData == null) return null;

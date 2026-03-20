@@ -14,8 +14,7 @@ class IllustratedErrorScreen extends StatefulWidget {
   final VoidCallback onRetry;
 
   @override
-  State<IllustratedErrorScreen> createState() =>
-      _IllustratedErrorScreenState();
+  State<IllustratedErrorScreen> createState() => _IllustratedErrorScreenState();
 }
 
 class _IllustratedErrorScreenState extends State<IllustratedErrorScreen>
@@ -40,12 +39,11 @@ class _IllustratedErrorScreenState extends State<IllustratedErrorScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isDark =
-        MediaQuery.platformBrightnessOf(context) == Brightness.dark;
-    final bg =
-        isDark ? const Color(0xFF0D1117) : const Color(0xFFFAFBFC);
-    final textColor =
-        isDark ? const Color(0xFFC9D1D9) : const Color(0xFF24292F);
+    final isDark = MediaQuery.platformBrightnessOf(context) == Brightness.dark;
+    final bg = isDark ? const Color(0xFF0D1117) : const Color(0xFFFAFBFC);
+    final textColor = isDark
+        ? const Color(0xFFC9D1D9)
+        : const Color(0xFF24292F);
 
     return Directionality(
       textDirection: TextDirection.ltr,
@@ -145,9 +143,7 @@ class _IllustrationPainter extends CustomPainter {
 
     // Large background circle.
     final bgCircle = Paint()
-      ..color = isDark
-          ? const Color(0x0DFFFFFF)
-          : const Color(0x0D000000);
+      ..color = isDark ? const Color(0x0DFFFFFF) : const Color(0x0D000000);
     canvas.drawCircle(
       Offset(cx, size.height * 0.3 + bobOffset),
       80,
@@ -156,15 +152,12 @@ class _IllustrationPainter extends CustomPainter {
 
     // Broken link illustration — two arcs.
     final arcPaint = Paint()
-      ..color = isDark
-          ? const Color(0xFF58A6FF)
-          : const Color(0xFF0969DA)
+      ..color = isDark ? const Color(0xFF58A6FF) : const Color(0xFF0969DA)
       ..strokeWidth = 4
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
-    final separation =
-        6 + math.sin(progress * 2 * math.pi) * 3;
+    final separation = 6 + math.sin(progress * 2 * math.pi) * 3;
 
     canvas
       // Left arc.
@@ -200,16 +193,12 @@ class _IllustrationPainter extends CustomPainter {
 
     // Small decorative dots.
     final dotPaint = Paint()
-      ..color = isDark
-          ? const Color(0x33FFFFFF)
-          : const Color(0x22000000);
+      ..color = isDark ? const Color(0x33FFFFFF) : const Color(0x22000000);
     for (var i = 0; i < 5; i++) {
-      final angle =
-          (i / 5) * 2 * math.pi + progress * 2 * math.pi;
+      final angle = (i / 5) * 2 * math.pi + progress * 2 * math.pi;
       final r = 60.0 + i * 8;
       final dx = cx + math.cos(angle) * r;
-      final dy =
-          size.height * 0.3 + math.sin(angle) * r * 0.5;
+      final dy = size.height * 0.3 + math.sin(angle) * r * 0.5;
       canvas.drawCircle(
         Offset(dx, dy + bobOffset),
         2 + i * 0.5,

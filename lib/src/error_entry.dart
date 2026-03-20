@@ -52,15 +52,15 @@ class ErrorEntry {
 
   /// Serialize to a JSON-compatible map for VM Service extensions.
   Map<String, dynamic> toJson() => {
-        'hash': hash,
-        'errorType': error.runtimeType.toString(),
-        'message': error.toString(),
-        'stackTrace': stackTrace.toString(),
-        'source': source,
-        if (diagnostics != null) 'diagnostics': diagnostics,
-        'firstSeen': firstSeen.toIso8601String(),
-        'lastSeen': lastSeen.toIso8601String(),
-        'count': count,
-        'label': label,
-      };
+    'hash': hash,
+    'errorType': error.runtimeType.toString(),
+    'message': error.toString(),
+    'stackTrace': stackTrace.toString(),
+    'source': source,
+    if (diagnostics != null) 'diagnostics': diagnostics,
+    'firstSeen': firstSeen.toIso8601String(),
+    'lastSeen': lastSeen.toIso8601String(),
+    'count': count,
+    'label': label,
+  };
 }

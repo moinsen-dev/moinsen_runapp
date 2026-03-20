@@ -17,24 +17,26 @@ import 'package:moinsen_runapp/src/cli/commands/status_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/stop_command.dart';
 
 Future<void> main(List<String> args) async {
-  final runner = CommandRunner<void>(
-    'moinsen_run',
-    'CLI bridge between a running Flutter app and LLM tools like Claude Code.',
-  )
-    ..addCommand(StartCommand())
-    ..addCommand(StatusCommand())
-    ..addCommand(ErrorsCommand())
-    ..addCommand(PromptCommand())
-    ..addCommand(LogsCommand())
-    ..addCommand(NavigateCommand())
-    ..addCommand(ReloadCommand())
-    ..addCommand(RestartCommand())
-    ..addCommand(StateCommand())
-    ..addCommand(AnalyzeCommand())
-    ..addCommand(ContextCommand())
-    ..addCommand(RouteCommand())
-    ..addCommand(ScreenshotCommand())
-    ..addCommand(StopCommand());
+  final runner =
+      CommandRunner<void>(
+          'moinsen_run',
+          'CLI bridge between a running Flutter app '
+          'and LLM tools like Claude Code.',
+        )
+        ..addCommand(StartCommand())
+        ..addCommand(StatusCommand())
+        ..addCommand(ErrorsCommand())
+        ..addCommand(PromptCommand())
+        ..addCommand(LogsCommand())
+        ..addCommand(NavigateCommand())
+        ..addCommand(ReloadCommand())
+        ..addCommand(RestartCommand())
+        ..addCommand(StateCommand())
+        ..addCommand(AnalyzeCommand())
+        ..addCommand(ContextCommand())
+        ..addCommand(RouteCommand())
+        ..addCommand(ScreenshotCommand())
+        ..addCommand(StopCommand());
 
   try {
     // Default to 'start' when no subcommand given.

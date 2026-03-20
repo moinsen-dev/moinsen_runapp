@@ -31,7 +31,8 @@ class ScreenshotCommand extends VmCommand {
   @override
   Future<void> execute(MoinsenVmClient client) async {
     final path = argResults?['path'] as String? ?? './screenshot.png';
-    final scale = double.tryParse(
+    final scale =
+        double.tryParse(
           argResults?['scale'] as String? ?? '0',
         ) ??
         0;
@@ -42,9 +43,11 @@ class ScreenshotCommand extends VmCommand {
     );
 
     if (result == null || result['error'] != null) {
-      stdout.writeln(jsonEncode(
-        result ?? {'error': 'No response from app'},
-      ));
+      stdout.writeln(
+        jsonEncode(
+          result ?? {'error': 'No response from app'},
+        ),
+      );
       return;
     }
 
@@ -53,11 +56,13 @@ class ScreenshotCommand extends VmCommand {
     final file = File(path);
     await file.writeAsBytes(bytes);
 
-    stdout.writeln(jsonEncode({
-      'path': file.absolute.path,
-      'width': result['width'],
-      'height': result['height'],
-      'bytes': bytes.length,
-    }));
+    stdout.writeln(
+      jsonEncode({
+        'path': file.absolute.path,
+        'width': result['width'],
+        'height': result['height'],
+        'bytes': bytes.length,
+      }),
+    );
   }
 }

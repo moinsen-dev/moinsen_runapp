@@ -101,8 +101,7 @@ class DebugErrorScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  if (observer.totalErrorCount >
-                      observer.uniqueErrorCount)
+                  if (observer.totalErrorCount > observer.uniqueErrorCount)
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
@@ -278,9 +277,7 @@ class _DebugErrorTileState extends State<_DebugErrorTile> {
                   ),
                 const Spacer(),
                 Icon(
-                  _expanded
-                      ? Icons.expand_less
-                      : Icons.expand_more,
+                  _expanded ? Icons.expand_less : Icons.expand_more,
                   color: const Color(0xFF666666),
                   size: 18,
                 ),
@@ -365,8 +362,7 @@ class _ActionButtonState extends State<_ActionButton> {
   static const _accentBlue = Color(0xFF4A9AF5);
   static const _accentRed = Color(0xFFFF6B6B);
 
-  Color get _accent =>
-      widget.destructive ? _accentRed : _accentBlue;
+  Color get _accent => widget.destructive ? _accentRed : _accentBlue;
 
   Color get _foreground =>
       widget.destructive ? _accentRed : const Color(0xFFCCCCCC);
@@ -385,9 +381,7 @@ class _ActionButtonState extends State<_ActionButton> {
           vertical: 8,
         ),
         decoration: BoxDecoration(
-          color: _pressed
-              ? const Color(0xFF3A3A3A)
-              : const Color(0xFF2A2A2A),
+          color: _pressed ? const Color(0xFF3A3A3A) : const Color(0xFF2A2A2A),
           borderRadius: BorderRadius.circular(6),
           border: Border.all(
             color: _pressed ? _accent : const Color(0xFF444444),

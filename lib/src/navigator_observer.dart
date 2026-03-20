@@ -18,6 +18,9 @@ class MoinsenNavigatorObserver extends NavigatorObserver {
   static MoinsenNavigatorObserver? _instance;
 
   /// The shared observer instance.
+  // Getter-based singleton — factory constructor would break the public API
+  // (callers use `MoinsenNavigatorObserver.instance`).
+  // ignore: prefer_constructors_over_static_methods
   static MoinsenNavigatorObserver get instance =>
       _instance ??= MoinsenNavigatorObserver._();
 
@@ -52,11 +55,11 @@ class MoinsenNavigatorObserver extends NavigatorObserver {
 
   /// Serialize current state to a JSON-compatible map.
   Map<String, dynamic> toJson() => {
-        'currentRoute': currentRoute,
-        'observerInstalled': true,
-        'historyCount': _history.length,
-        'history': _history.map((r) => r.toJson()).toList(),
-      };
+    'currentRoute': currentRoute,
+    'observerInstalled': true,
+    'historyCount': _history.length,
+    'history': _history.map((r) => r.toJson()).toList(),
+  };
 
   @override
   void didPush(Route<dynamic> route, Route<dynamic>? previousRoute) {
@@ -84,12 +87,14 @@ class MoinsenNavigatorObserver extends NavigatorObserver {
     if (_history.length >= _historyCapacity) {
       _history.removeAt(0);
     }
-    _history.add(RouteRecord(
-      action: action,
-      routeName: route.settings.name,
-      arguments: route.settings.arguments?.toString(),
-      timestamp: DateTime.now(),
-    ));
+    _history.add(
+      RouteRecord(
+        action: action,
+        routeName: route.settings.name,
+        arguments: route.settings.arguments?.toString(),
+        timestamp: DateTime.now(),
+      ),
+    );
   }
 
   /// Push a named route via the observer's navigator.
@@ -143,9 +148,9 @@ class RouteRecord {
 
   /// Serialize to JSON-compatible map.
   Map<String, dynamic> toJson() => {
-        'action': action,
-        'routeName': routeName,
-        if (arguments != null) 'arguments': arguments,
-        'timestamp': timestamp.toIso8601String(),
-      };
+    'action': action,
+    'routeName': routeName,
+    if (arguments != null) 'arguments': arguments,
+    'timestamp': timestamp.toIso8601String(),
+  };
 }

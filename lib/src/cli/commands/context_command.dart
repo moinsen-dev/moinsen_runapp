@@ -44,10 +44,10 @@ class ContextCommand extends VmCommand {
 
   @override
   Future<void> execute(MoinsenVmClient client) async {
-    final withScreenshot =
-        argResults?['with-screenshot'] as bool? ?? false;
+    final withScreenshot = argResults?['with-screenshot'] as bool? ?? false;
     final withTree = argResults?['with-tree'] as bool? ?? false;
-    final logCount = int.tryParse(
+    final logCount =
+        int.tryParse(
           argResults?['log-count'] as String? ?? '20',
         ) ??
         20;
@@ -68,8 +68,7 @@ class ContextCommand extends VmCommand {
       final screenshotResult = await client.callMoinsenWithParams(
         'ext.moinsen.screenshot',
       );
-      if (screenshotResult != null &&
-          screenshotResult['screenshot'] != null) {
+      if (screenshotResult != null && screenshotResult['screenshot'] != null) {
         final bytes = base64Decode(
           screenshotResult['screenshot'] as String,
         );
@@ -87,15 +86,16 @@ class ContextCommand extends VmCommand {
 
     if (format == 'json') {
       // JSON format: raw data
-      stdout.writeln(jsonEncode({
-        'errors': errorsData,
-        'logs': logsData,
-        'route': routeData,
-        'info': infoData,
-        if (savedScreenshotPath != null)
-          'screenshotPath': savedScreenshotPath,
-        if (widgetTree != null) 'widgetTree': widgetTree,
-      }));
+      stdout.writeln(
+        jsonEncode({
+          'errors': errorsData,
+          'logs': logsData,
+          'route': routeData,
+          'info': infoData,
+          'screenshotPath': ?savedScreenshotPath,
+          'widgetTree': ?widgetTree,
+        }),
+      );
       return;
     }
 
@@ -108,8 +108,7 @@ class ContextCommand extends VmCommand {
         : allLogs;
     final platform = infoData?['platform'] as String? ?? 'unknown';
     final currentRoute = routeData?['currentRoute'] as String?;
-    final observerInstalled =
-        routeData?['observerInstalled'] as bool? ?? false;
+    final observerInstalled = routeData?['observerInstalled'] as bool? ?? false;
     final routeHistory = (routeData?['history'] as List<dynamic>?)
         ?.cast<Map<String, dynamic>>();
     final totalErrorCount = errorsData?['totalCount'] as int? ?? 0;
@@ -153,7 +152,7 @@ class ContextCommand extends VmCommand {
             : message;
         buffer.writeln(
           '${i + 1}. **$errorType** '
-          '(${count}×, source: $source): $truncMsg',
+          '($count×, source: $source): $truncMsg',
         );
       }
       buffer.writeln();
@@ -173,8 +172,7 @@ class ContextCommand extends VmCommand {
         final level = logMap['level'] as String? ?? '?';
         final source = logMap['source'] as String? ?? '-';
         final msg = logMap['message'] as String? ?? '';
-        final truncMsg =
-            msg.length > 80 ? '${msg.substring(0, 77)}...' : msg;
+        final truncMsg = msg.length > 80 ? '${msg.substring(0, 77)}...' : msg;
         buffer.writeln('| $time | $level | $source | $truncMsg |');
       }
       buffer.writeln();
@@ -217,7 +215,7 @@ class ContextCommand extends VmCommand {
       final condensed = lines.length <= 50
           ? widgetTree
           : '${lines.take(50).join('\n')}\n'
-              '... (${lines.length - 50} more lines)';
+                '... (${lines.length - 50} more lines)';
       buffer
         ..writeln('## Widget Tree')
         ..writeln()

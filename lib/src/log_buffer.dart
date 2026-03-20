@@ -21,11 +21,11 @@ class LogEntry {
 
   /// Serialize to JSON-compatible map.
   Map<String, dynamic> toJson() => {
-        'level': level,
-        'message': message,
-        'timestamp': timestamp.toIso8601String(),
-        if (source != null) 'source': source,
-      };
+    'level': level,
+    'message': message,
+    'timestamp': timestamp.toIso8601String(),
+    if (source != null) 'source': source,
+  };
 }
 
 /// Fixed-capacity ring buffer for log entries.

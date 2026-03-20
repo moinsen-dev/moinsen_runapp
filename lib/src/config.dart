@@ -14,10 +14,11 @@ enum ErrorScreenVariant {
 }
 
 /// Builder for custom error screens.
-typedef ErrorScreenBuilder = Widget Function(
-  BuildContext context,
-  List<ErrorEntry> errors,
-);
+typedef ErrorScreenBuilder =
+    Widget Function(
+      BuildContext context,
+      List<ErrorEntry> errors,
+    );
 
 /// Configuration for `moinsenRunApp`.
 class RunAppConfig {

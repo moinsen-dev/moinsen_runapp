@@ -3,9 +3,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:moinsen_runapp/src/navigator_observer.dart';
 
 Route<void> _route(String name) => MaterialPageRoute<void>(
-      settings: RouteSettings(name: name),
-      builder: (_) => const SizedBox(),
-    );
+  settings: RouteSettings(name: name),
+  builder: (_) => const SizedBox(),
+);
 
 void main() {
   group('MoinsenNavigatorObserver', () {
@@ -46,7 +46,7 @@ void main() {
     });
 
     test('didReplace does nothing when newRoute is null', () {
-      observer.didReplace(newRoute: null, oldRoute: _route('/home'));
+      observer.didReplace(oldRoute: _route('/home'));
 
       expect(observer.history, isEmpty);
     });

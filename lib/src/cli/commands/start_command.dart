@@ -15,8 +15,7 @@ class StartCommand extends Command<void> {
   /// Allow running with arbitrary flutter args.
   @override
   Future<void> run([List<String>? args]) async {
-    final stateFilePath =
-        '${Directory.current.path}/.moinsen_run.json';
+    final stateFilePath = '${Directory.current.path}/.moinsen_run.json';
     final runner = CliRunner(
       stateFilePath: stateFilePath,
       flutterArgs: args ?? argResults?.rest ?? [],

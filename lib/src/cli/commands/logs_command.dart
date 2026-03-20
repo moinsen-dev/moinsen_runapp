@@ -33,17 +33,21 @@ class LogsCommand extends VmCommand {
       final trimmed = logs.length > last
           ? logs.sublist(logs.length - last)
           : logs;
-      stdout.writeln(jsonEncode({
-        'logs': trimmed,
-        'returned': trimmed.length,
-        'total': logs.length,
-      }));
+      stdout.writeln(
+        jsonEncode({
+          'logs': trimmed,
+          'returned': trimmed.length,
+          'total': logs.length,
+        }),
+      );
     } else {
-      stdout.writeln(jsonEncode({
-        'logs': <dynamic>[],
-        'returned': 0,
-        'total': 0,
-      }));
+      stdout.writeln(
+        jsonEncode({
+          'logs': <dynamic>[],
+          'returned': 0,
+          'total': 0,
+        }),
+      );
     }
   }
 }

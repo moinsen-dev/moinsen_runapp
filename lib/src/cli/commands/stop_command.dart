@@ -18,25 +18,31 @@ class StopCommand extends Command<void> {
     final state = readStateFile(path: statePath);
 
     if (state == null) {
-      stdout.writeln(jsonEncode({
-        'stopped': false,
-        'error': 'No running app found.',
-      }));
+      stdout.writeln(
+        jsonEncode({
+          'stopped': false,
+          'error': 'No running app found.',
+        }),
+      );
       return;
     }
 
     try {
       Process.killPid(state.pid);
       deleteStateFile(path: statePath);
-      stdout.writeln(jsonEncode({
-        'stopped': true,
-        'pid': state.pid,
-      }));
+      stdout.writeln(
+        jsonEncode({
+          'stopped': true,
+          'pid': state.pid,
+        }),
+      );
     } on Object catch (e) {
-      stdout.writeln(jsonEncode({
-        'stopped': false,
-        'error': 'Failed to kill process ${state.pid}: $e',
-      }));
+      stdout.writeln(
+        jsonEncode({
+          'stopped': false,
+          'error': 'Failed to kill process ${state.pid}: $e',
+        }),
+      );
     }
   }
 }

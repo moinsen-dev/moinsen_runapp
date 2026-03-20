@@ -15,9 +15,11 @@ abstract class VmCommand extends Command<void> {
     );
 
     if (state == null) {
-      stderr.writeln(jsonEncode({
-        'error': 'No running app found. Start one with: moinsen_run start',
-      }));
+      stderr.writeln(
+        jsonEncode({
+          'error': 'No running app found. Start one with: moinsen_run start',
+        }),
+      );
       exit(1);
     }
 
@@ -26,10 +28,12 @@ abstract class VmCommand extends Command<void> {
       client = await MoinsenVmClient.connect(state.vmServiceUri);
       await execute(client);
     } on Object catch (e) {
-      stderr.writeln(jsonEncode({
-        'error': 'Failed to connect to VM Service: $e',
-        'vmServiceUri': state.vmServiceUri,
-      }));
+      stderr.writeln(
+        jsonEncode({
+          'error': 'Failed to connect to VM Service: $e',
+          'vmServiceUri': state.vmServiceUri,
+        }),
+      );
       exit(1);
     } finally {
       await client?.dispose();

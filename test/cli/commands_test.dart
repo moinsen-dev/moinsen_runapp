@@ -38,22 +38,25 @@ void main() {
     });
 
     test('all 14 commands are registered', () {
-      expect(runner.commands.keys, containsAll([
-        'start',
-        'status',
-        'errors',
-        'prompt',
-        'logs',
-        'navigate',
-        'reload',
-        'restart',
-        'state',
-        'analyze',
-        'context',
-        'route',
-        'screenshot',
-        'stop',
-      ]));
+      expect(
+        runner.commands.keys,
+        containsAll([
+          'start',
+          'status',
+          'errors',
+          'prompt',
+          'logs',
+          'navigate',
+          'reload',
+          'restart',
+          'state',
+          'analyze',
+          'context',
+          'route',
+          'screenshot',
+          'stop',
+        ]),
+      );
       expect(runner.commands.length, 15); // 14 + help
     });
 

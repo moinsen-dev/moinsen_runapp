@@ -19,12 +19,12 @@ class RouteCommand extends VmCommand {
   String get name => 'route';
 
   @override
-  String get description =>
-      'Get the current route and navigation history.';
+  String get description => 'Get the current route and navigation history.';
 
   @override
   Future<void> execute(MoinsenVmClient client) async {
-    final historyCount = int.tryParse(
+    final historyCount =
+        int.tryParse(
           argResults?['history'] as String? ?? '10',
         ) ??
         10;
@@ -35,19 +35,23 @@ class RouteCommand extends VmCommand {
       final trimmed = history.length > historyCount
           ? history.sublist(history.length - historyCount)
           : history;
-      stdout.writeln(jsonEncode({
-        'currentRoute': result['currentRoute'],
-        'observerInstalled': result['observerInstalled'],
-        'history': trimmed,
-        'returned': trimmed.length,
-        'total': history.length,
-      }));
+      stdout.writeln(
+        jsonEncode({
+          'currentRoute': result['currentRoute'],
+          'observerInstalled': result['observerInstalled'],
+          'history': trimmed,
+          'returned': trimmed.length,
+          'total': history.length,
+        }),
+      );
     } else {
-      stdout.writeln(jsonEncode({
-        'currentRoute': null,
-        'observerInstalled': false,
-        'history': <dynamic>[],
-      }));
+      stdout.writeln(
+        jsonEncode({
+          'currentRoute': null,
+          'observerInstalled': false,
+          'history': <dynamic>[],
+        }),
+      );
     }
   }
 }

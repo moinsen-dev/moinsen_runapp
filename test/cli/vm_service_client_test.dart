@@ -40,8 +40,8 @@ void main() {
       //  "result": <actual JSON string>}
       // But callServiceExtension returns the result directly.
       const responseJson = '{"errors":[],"totalCount":0}';
-      final parsed = parseExtensionResponse(responseJson)!
-          as Map<String, dynamic>;
+      final parsed =
+          parseExtensionResponse(responseJson)! as Map<String, dynamic>;
 
       expect(parsed['errors'], isEmpty);
       expect(parsed['totalCount'], 0);

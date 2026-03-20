@@ -82,8 +82,7 @@ void registerMoinsenExtensions({
   developer.registerExtension(
     'ext.moinsen.screenshot',
     (method, params) async {
-      final scale =
-          double.tryParse(params['scale'] ?? '') ?? 0;
+      final scale = double.tryParse(params['scale'] ?? '') ?? 0;
       return developer.ServiceExtensionResponse.result(
         await handleScreenshot(scale: scale),
       );
@@ -138,8 +137,8 @@ String handleGetPrompt(ErrorBucket bucket, LogBuffer logBuffer) {
       observerInstalled: MoinsenNavigatorObserver.isInstalled,
       routeHistory: MoinsenNavigatorObserver.isInstalled
           ? MoinsenNavigatorObserver.instance.history
-              .map((r) => r.toJson())
-              .toList()
+                .map((r) => r.toJson())
+                .toList()
           : const [],
     ),
   });

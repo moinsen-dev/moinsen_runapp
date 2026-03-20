@@ -15,8 +15,10 @@ class StateCommand extends VmCommand {
   @override
   Future<void> execute(MoinsenVmClient client) async {
     final tree = await client.getWidgetTree();
-    stdout.writeln(jsonEncode({
-      'widgetTree': tree ?? 'Unable to retrieve widget tree.',
-    }));
+    stdout.writeln(
+      jsonEncode({
+        'widgetTree': tree ?? 'Unable to retrieve widget tree.',
+      }),
+    );
   }
 }

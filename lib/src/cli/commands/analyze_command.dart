@@ -20,11 +20,13 @@ class AnalyzeCommand extends Command<void> {
     );
 
     final issues = _parseAnalyzeOutput(result.stdout as String);
-    stdout.writeln(jsonEncode({
-      'exitCode': result.exitCode,
-      'issueCount': issues.length,
-      'issues': issues,
-    }));
+    stdout.writeln(
+      jsonEncode({
+        'exitCode': result.exitCode,
+        'issueCount': issues.length,
+        'issues': issues,
+      }),
+    );
   }
 
   /// Parse flutter analyze output into structured issues.

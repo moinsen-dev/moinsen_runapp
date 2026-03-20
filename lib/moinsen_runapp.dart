@@ -9,7 +9,8 @@ export 'src/context_generator.dart' show generateContext;
 export 'src/error_entry.dart';
 export 'src/error_observer.dart';
 export 'src/navigator_observer.dart';
-export 'src/prompt_generator.dart' show generateBugReport, generateEnhancedReport;
+export 'src/prompt_generator.dart'
+    show generateBugReport, generateEnhancedReport;
 export 'src/runner.dart'
     show
         moinsenLog,

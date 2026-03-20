@@ -13,8 +13,7 @@ class FriendlyErrorScreen extends StatefulWidget {
   final VoidCallback onRetry;
 
   @override
-  State<FriendlyErrorScreen> createState() =>
-      _FriendlyErrorScreenState();
+  State<FriendlyErrorScreen> createState() => _FriendlyErrorScreenState();
 }
 
 class _FriendlyErrorScreenState extends State<FriendlyErrorScreen>
@@ -39,12 +38,11 @@ class _FriendlyErrorScreenState extends State<FriendlyErrorScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isDark =
-        MediaQuery.platformBrightnessOf(context) == Brightness.dark;
-    final bg =
-        isDark ? const Color(0xFF1A1A2E) : const Color(0xFFF8F0FF);
-    final textColor =
-        isDark ? const Color(0xFFE0D6FF) : const Color(0xFF3A2D5C);
+    final isDark = MediaQuery.platformBrightnessOf(context) == Brightness.dark;
+    final bg = isDark ? const Color(0xFF1A1A2E) : const Color(0xFFF8F0FF);
+    final textColor = isDark
+        ? const Color(0xFFE0D6FF)
+        : const Color(0xFF3A2D5C);
 
     return Directionality(
       textDirection: TextDirection.ltr,
@@ -128,17 +126,13 @@ class _FriendlyCharPainter extends CustomPainter {
 
     // Body circle.
     final bodyPaint = Paint()
-      ..color = isDark
-          ? const Color(0xFF6C5CE7)
-          : const Color(0xFFA29BFE);
+      ..color = isDark ? const Color(0xFF6C5CE7) : const Color(0xFFA29BFE);
     canvas.drawCircle(Offset(cx, cy + wobble), 40, bodyPaint);
 
     // Eyes.
     final eyePaint = Paint()..color = Colors.white;
     final pupilPaint = Paint()
-      ..color = isDark
-          ? const Color(0xFF2D2B55)
-          : const Color(0xFF3A2D5C);
+      ..color = isDark ? const Color(0xFF2D2B55) : const Color(0xFF3A2D5C);
 
     canvas
       ..drawCircle(
@@ -169,14 +163,11 @@ class _FriendlyCharPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
-    final mouthPath = Path()
-      ..moveTo(cx - 12, cy + 14 + wobble);
+    final mouthPath = Path()..moveTo(cx - 12, cy + 14 + wobble);
     for (var i = 0; i <= 24; i++) {
       final x = cx - 12 + i;
-      final y = cy +
-          14 +
-          wobble +
-          math.sin(i * 0.6 + progress * 2 * math.pi) * 3;
+      final y =
+          cy + 14 + wobble + math.sin(i * 0.6 + progress * 2 * math.pi) * 3;
       mouthPath.lineTo(x, y);
     }
     canvas
@@ -205,16 +196,13 @@ class _RetryButton extends StatelessWidget {
           vertical: 14,
         ),
         decoration: BoxDecoration(
-          color: isDark
-              ? const Color(0xFF6C5CE7)
-              : const Color(0xFFA29BFE),
+          color: isDark ? const Color(0xFF6C5CE7) : const Color(0xFFA29BFE),
           borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
-              color: (isDark
-                      ? const Color(0xFF6C5CE7)
-                      : const Color(0xFFA29BFE))
-                  .withValues(alpha: 0.3),
+              color:
+                  (isDark ? const Color(0xFF6C5CE7) : const Color(0xFFA29BFE))
+                      .withValues(alpha: 0.3),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),

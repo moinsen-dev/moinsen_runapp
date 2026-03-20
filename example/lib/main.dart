@@ -6,7 +6,7 @@ void main() {
     init: () async {
       // Simulate async initialization (Firebase, Hive, etc.)
       await Future<void>.delayed(const Duration(milliseconds: 500));
-      moinsenLog('App initialized', source: 'init', level: 'info');
+      moinsenLog('App initialized', source: 'init');
     },
     onError: (error, stackTrace) {
       // Forward to Sentry, Crashlytics, or your own backend:
@@ -32,10 +32,7 @@ class ExampleApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'moinsen_runapp Example',
-      theme: ThemeData(
-        colorSchemeSeed: Colors.deepPurple,
-        useMaterial3: true,
-      ),
+      theme: ThemeData(colorSchemeSeed: Colors.deepPurple, useMaterial3: true),
       // Add the navigator observer for route tracking and navigation control.
       navigatorObservers: [MoinsenNavigatorObserver.instance],
       initialRoute: '/',
@@ -61,9 +58,9 @@ class HomePage extends StatelessWidget {
             const Text('The app is running with moinsen_runapp!'),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: () {
+              onPressed: () async {
                 moinsenLog('Navigating to details', source: 'home');
-                Navigator.of(context).pushNamed('/details');
+                await Navigator.of(context).pushNamed('/details');
               },
               child: const Text('Go to Details'),
             ),

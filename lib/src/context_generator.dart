@@ -37,8 +37,9 @@ String generateContext({
 
   // Errors section
   if (errors.isNotEmpty) {
-    buffer.writeln('## Errors');
-    buffer.writeln();
+    buffer
+      ..writeln('## Errors')
+      ..writeln();
     for (var i = 0; i < errors.length; i++) {
       final e = errors[i];
       buffer.writeln(

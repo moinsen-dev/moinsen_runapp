@@ -65,8 +65,7 @@ class ErrorLogger {
 
   void _trackBurst() {
     final now = DateTime.now();
-    if (_burstStart == null ||
-        now.difference(_burstStart!) > _burstWindow) {
+    if (_burstStart == null || now.difference(_burstStart!) > _burstWindow) {
       _burstStart = now;
       _burstCount = 1;
     } else {

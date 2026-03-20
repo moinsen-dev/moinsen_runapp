@@ -97,10 +97,10 @@ void moinsenLog(String message, {String? source, String level = 'info'}) {
 }
 
 int _logLevel(String level) => switch (level) {
-      'error' => 1000,
-      'warning' => 900,
-      _ => 800,
-    };
+  'error' => 1000,
+  'warning' => 900,
+  _ => 800,
+};
 
 /// Reset the global log buffer. Only for use in tests.
 @visibleForTesting
@@ -184,9 +184,7 @@ void moinsenRunApp({
           textDirection: TextDirection.ltr,
           child: Container(
             padding: const EdgeInsets.all(8),
-            color: kDebugMode
-                ? const Color(0xFFFF0000)
-                : Colors.transparent,
+            color: kDebugMode ? const Color(0xFFFF0000) : Colors.transparent,
             child: kDebugMode
                 ? Text(
                     '${details.exception}',
@@ -202,8 +200,7 @@ void moinsenRunApp({
 
       // 7. Set up file logger if configured.
       if (config.logToFile) {
-        final path =
-            config.logFilePath ?? await _resolveLogPath();
+        final path = config.logFilePath ?? await _resolveLogPath();
         if (path != null) {
           final fileLogger = ErrorFileLogger(filePath: path);
           await fileLogger.init();

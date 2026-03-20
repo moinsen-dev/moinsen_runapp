@@ -118,8 +118,7 @@ void main() {
       expect(report, contains('_MoinsenNavigatorObserver not installed._'));
     });
 
-    test('omits navigation warning when observer installed but no history',
-        () {
+    test('omits navigation warning when observer installed but no history', () {
       final report = generateContext(
         errors: [],
         platform: 'macos',

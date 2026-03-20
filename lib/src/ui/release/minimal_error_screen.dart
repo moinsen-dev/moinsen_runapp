@@ -11,12 +11,12 @@ class MinimalErrorScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark =
-        MediaQuery.platformBrightnessOf(context) == Brightness.dark;
+    final isDark = MediaQuery.platformBrightnessOf(context) == Brightness.dark;
     final bg = isDark ? const Color(0xFF121212) : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF212121);
-    final subtleColor =
-        isDark ? const Color(0xFF888888) : const Color(0xFF757575);
+    final subtleColor = isDark
+        ? const Color(0xFF888888)
+        : const Color(0xFF757575);
 
     return Directionality(
       textDirection: TextDirection.ltr,

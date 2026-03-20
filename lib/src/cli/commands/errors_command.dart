@@ -15,8 +15,10 @@ class ErrorsCommand extends VmCommand {
   @override
   Future<void> execute(MoinsenVmClient client) async {
     final result = await client.callMoinsen('ext.moinsen.getErrors');
-    stdout.writeln(jsonEncode(
-      result ?? <String, dynamic>{'errors': <dynamic>[], 'totalCount': 0},
-    ));
+    stdout.writeln(
+      jsonEncode(
+        result ?? <String, dynamic>{'errors': <dynamic>[], 'totalCount': 0},
+      ),
+    );
   }
 }

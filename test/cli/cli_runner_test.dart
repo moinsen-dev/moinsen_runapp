@@ -5,7 +5,8 @@ void main() {
   group('CliRunner', () {
     group('extractVmServiceUri', () {
       test('extracts URI from standard flutter run output', () {
-        const line = 'The Dart VM service is listening on '
+        const line =
+            'The Dart VM service is listening on '
             'http://127.0.0.1:52938/yR5v7HOHQ8c=/';
         expect(
           extractVmServiceUri(line),
@@ -14,7 +15,8 @@ void main() {
       });
 
       test('extracts URI from verbose flutter output', () {
-        const line = 'An Observatory debugger and profiler on '
+        const line =
+            'An Observatory debugger and profiler on '
             'macOS is available at: '
             'http://127.0.0.1:9100/xYz=/';
         expect(

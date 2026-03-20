@@ -13,9 +13,7 @@ void main() {
       setupTestLogBuffer(buffer);
     });
 
-    tearDown(() {
-      resetGlobalLogBuffer();
-    });
+    tearDown(resetGlobalLogBuffer);
 
     test('writes to the buffer when initialized', () {
       moinsenLog('hello world');

@@ -19,9 +19,11 @@ class StatusCommand extends Command<void> {
     );
 
     if (state == null) {
-      stdout.writeln(jsonEncode({
-        'running': false,
-      }));
+      stdout.writeln(
+        jsonEncode({
+          'running': false,
+        }),
+      );
       return;
     }
 
@@ -31,23 +33,28 @@ class StatusCommand extends Command<void> {
       deleteStateFile(
         path: '${Directory.current.path}/.moinsen_run.json',
       );
-      stdout.writeln(jsonEncode({
-        'running': false,
-        'stale': true,
-        'message': 'State file found but process ${state.pid} is not running.',
-      }));
+      stdout.writeln(
+        jsonEncode({
+          'running': false,
+          'stale': true,
+          'message':
+              'State file found but process ${state.pid} is not running.',
+        }),
+      );
       return;
     }
 
     final uptime = DateTime.now().difference(state.startedAt);
-    stdout.writeln(jsonEncode({
-      'running': true,
-      'pid': state.pid,
-      'device': state.device,
-      'vmServiceUri': state.vmServiceUri,
-      'startedAt': state.startedAt.toIso8601String(),
-      'uptime': _formatDuration(uptime),
-    }));
+    stdout.writeln(
+      jsonEncode({
+        'running': true,
+        'pid': state.pid,
+        'device': state.device,
+        'vmServiceUri': state.vmServiceUri,
+        'startedAt': state.startedAt.toIso8601String(),
+        'uptime': _formatDuration(uptime),
+      }),
+    );
   }
 
   bool _isProcessAlive(int pid) {
