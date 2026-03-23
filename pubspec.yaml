@@ -1,10 +1,9 @@
 name: moinsen_runapp
 description: >-
-  Drop-in runApp() replacement — the universal LLM debug bridge for Flutter.
+  Universal LLM debug bridge for Flutter.
   Three-layer error catching, deduplication, screenshot capture, navigation
   tracking, and a CLI tool for live LLM-assisted debugging.
-version: 0.4.0
-
+version: 0.5.0
 repository: https://github.com/moinsen-dev/moinsen_runapp
 homepage: https://github.com/moinsen-dev/moinsen_runapp
 issue_tracker: https://github.com/moinsen-dev/moinsen_runapp/issues

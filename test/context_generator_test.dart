@@ -189,6 +189,110 @@ void main() {
       expect(report, contains('**Route:** /dashboard'));
     });
 
+    test('includes device info when provided', () {
+      final report = generateContext(
+        errors: [],
+        platform: 'android',
+        recentLogs: [],
+        deviceInfo: {
+          'os': 'android',
+          'logicalWidth': 375.0,
+          'logicalHeight': 812.0,
+          'devicePixelRatio': 3.0,
+          'platformBrightness': 'dark',
+          'textScaleFactor': 1.0,
+          'locale': 'de-DE',
+        },
+      );
+
+      expect(report, contains('## Device & Environment'));
+      expect(report, contains('375'));
+      expect(report, contains('812'));
+      expect(report, contains('dark'));
+    });
+
+    test('includes lifecycle info when provided', () {
+      final report = generateContext(
+        errors: [],
+        platform: 'ios',
+        recentLogs: [],
+        lifecycleState: 'resumed',
+        lifecycleHistory: [
+          {
+            'state': 'paused',
+            'previousState': 'resumed',
+            'timestamp': '2026-03-23T14:00:00.000',
+          },
+          {
+            'state': 'resumed',
+            'previousState': 'paused',
+            'timestamp': '2026-03-23T14:01:00.000',
+          },
+        ],
+      );
+
+      expect(report, contains('## Lifecycle'));
+      expect(report, contains('resumed'));
+      expect(report, contains('paused'));
+    });
+
+    test('includes network traffic when provided', () {
+      final report = generateContext(
+        errors: [],
+        platform: 'macos',
+        recentLogs: [],
+        networkRequests: [
+          {
+            'method': 'GET',
+            'url': 'https://api.example.com/data',
+            'statusCode': 200,
+            'duration_ms': 42,
+            'timestamp': '2026-03-23T14:00:00.000',
+          },
+          {
+            'method': 'POST',
+            'url': 'https://api.example.com/auth',
+            'statusCode': 500,
+            'duration_ms': 300,
+            'timestamp': '2026-03-23T14:01:00.000',
+          },
+        ],
+        networkErrorCount: 1,
+      );
+
+      expect(report, contains('## Network Traffic'));
+      expect(report, contains('GET'));
+      expect(report, contains('api.example.com'));
+      expect(report, contains('500'));
+    });
+
+    test('includes app state when provided', () {
+      final report = generateContext(
+        errors: [],
+        platform: 'macos',
+        recentLogs: [],
+        appStates: {
+          'cart': {'items': 3, 'total': 49.99},
+          'user': {'name': 'Uli'},
+        },
+      );
+
+      expect(report, contains('## App State'));
+      expect(report, contains('cart'));
+      expect(report, contains('user'));
+    });
+
+    test('includes available actions section', () {
+      final report = generateContext(
+        errors: [],
+        platform: 'macos',
+        recentLogs: [],
+      );
+
+      expect(report, contains('## Available Actions'));
+      expect(report, contains('hot reload'));
+    });
+
     test('truncates long error messages', () {
       final longMessage = 'x' * 200;
       final errors = [

@@ -32,6 +32,8 @@ class RunAppConfig {
     this.releaseScreenBuilder,
     this.debugScreenBuilder,
     this.screenshotMaxDimension,
+    this.monitorHttp = true,
+    this.httpBufferCapacity = 100,
   });
 
   /// Time window for deduplicating identical errors.
@@ -63,4 +65,13 @@ class RunAppConfig {
   ///
   /// If null (the default), no limit is applied.
   final int? screenshotMaxDimension;
+
+  /// Whether to monitor HTTP traffic via `HttpOverrides`.
+  ///
+  /// When enabled (the default), all `dart:io` HTTP requests are
+  /// automatically intercepted and recorded for LLM debugging context.
+  final bool monitorHttp;
+
+  /// Maximum number of HTTP requests to retain in the ring buffer.
+  final int httpBufferCapacity;
 }

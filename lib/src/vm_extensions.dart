@@ -2,12 +2,16 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 import 'dart:io' show Platform;
 
+import 'package:moinsen_runapp/src/device_info_collector.dart';
 import 'package:moinsen_runapp/src/error_bucket.dart';
 import 'package:moinsen_runapp/src/error_observer.dart';
+import 'package:moinsen_runapp/src/http_monitor.dart';
+import 'package:moinsen_runapp/src/lifecycle_observer.dart';
 import 'package:moinsen_runapp/src/log_buffer.dart';
 import 'package:moinsen_runapp/src/navigator_observer.dart';
 import 'package:moinsen_runapp/src/prompt_generator.dart';
 import 'package:moinsen_runapp/src/screenshot_service.dart';
+import 'package:moinsen_runapp/src/state_registry.dart';
 
 /// Register VM Service extensions for external tooling access.
 ///
@@ -77,6 +81,37 @@ void registerMoinsenExtensions({
     (method, params) async => developer.ServiceExtensionResponse.result(
       handleGetContext(bucket, logBuffer),
     ),
+  );
+
+  developer.registerExtension(
+    'ext.moinsen.getDeviceInfo',
+    (method, params) async => developer.ServiceExtensionResponse.result(
+      handleGetDeviceInfo(),
+    ),
+  );
+
+  developer.registerExtension(
+    'ext.moinsen.getLifecycle',
+    (method, params) async => developer.ServiceExtensionResponse.result(
+      handleGetLifecycle(),
+    ),
+  );
+
+  developer.registerExtension(
+    'ext.moinsen.getNetwork',
+    (method, params) async => developer.ServiceExtensionResponse.result(
+      handleGetNetwork(),
+    ),
+  );
+
+  developer.registerExtension(
+    'ext.moinsen.getState',
+    (method, params) async {
+      final key = params['key'];
+      return developer.ServiceExtensionResponse.result(
+        handleGetState(key: key),
+      );
+    },
   );
 
   developer.registerExtension(
@@ -203,7 +238,56 @@ String handleGetContext(ErrorBucket bucket, LogBuffer logBuffer) {
     'logCount': logBuffer.size,
     'route': jsonDecode(routeData),
     'platform': Platform.operatingSystem,
+    'device': DeviceInfoCollector.collect(),
+    'lifecycle': jsonDecode(handleGetLifecycle()),
+    'network': jsonDecode(handleGetNetwork()),
+    'state': jsonDecode(handleGetState()),
   });
+}
+
+/// Handler for ext.moinsen.getState — exported for testability.
+String handleGetState({String? key}) {
+  if (!MoinsenStateRegistry.isInstalled) {
+    return jsonEncode({'states': <String, dynamic>{}});
+  }
+
+  if (key != null && key.isNotEmpty) {
+    return jsonEncode({
+      'states': {key: MoinsenStateRegistry.instance.snapshotKey(key)},
+    });
+  }
+
+  return jsonEncode(MoinsenStateRegistry.instance.toJson());
+}
+
+/// Handler for ext.moinsen.getNetwork — exported for testability.
+String handleGetNetwork() {
+  if (!MoinsenHttpMonitor.isInstalled) {
+    return jsonEncode({
+      'totalCount': 0,
+      'errorCount': 0,
+      'avgDuration_ms': 0,
+      'requests': <dynamic>[],
+    });
+  }
+  return jsonEncode(MoinsenHttpMonitor.instance.toJson());
+}
+
+/// Handler for ext.moinsen.getDeviceInfo — exported for testability.
+String handleGetDeviceInfo() {
+  return jsonEncode(DeviceInfoCollector.collect());
+}
+
+/// Handler for ext.moinsen.getLifecycle — exported for testability.
+String handleGetLifecycle() {
+  if (!MoinsenLifecycleObserver.isInstalled) {
+    return jsonEncode({
+      'currentState': 'unknown',
+      'uptime_ms': 0,
+      'history': <dynamic>[],
+    });
+  }
+  return jsonEncode(MoinsenLifecycleObserver.instance.toJson());
 }
 
 /// Handler for ext.moinsen.screenshot — exported for testability.

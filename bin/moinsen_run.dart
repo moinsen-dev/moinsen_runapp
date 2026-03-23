@@ -3,9 +3,13 @@ import 'dart:io';
 import 'package:args/command_runner.dart';
 import 'package:moinsen_runapp/src/cli/commands/analyze_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/context_command.dart';
+import 'package:moinsen_runapp/src/cli/commands/device_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/errors_command.dart';
+import 'package:moinsen_runapp/src/cli/commands/inspect_command.dart';
+import 'package:moinsen_runapp/src/cli/commands/lifecycle_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/logs_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/navigate_command.dart';
+import 'package:moinsen_runapp/src/cli/commands/network_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/prompt_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/reload_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/restart_command.dart';
@@ -21,7 +25,7 @@ Future<void> main(List<String> args) async {
       CommandRunner<void>(
           'moinsen_run',
           'CLI bridge between a running Flutter app '
-          'and LLM tools like Claude Code.',
+              'and LLM tools like Claude Code.',
         )
         ..addCommand(StartCommand())
         ..addCommand(StatusCommand())
@@ -34,6 +38,10 @@ Future<void> main(List<String> args) async {
         ..addCommand(StateCommand())
         ..addCommand(AnalyzeCommand())
         ..addCommand(ContextCommand())
+        ..addCommand(DeviceCommand())
+        ..addCommand(InspectCommand())
+        ..addCommand(LifecycleCommand())
+        ..addCommand(NetworkCommand())
         ..addCommand(RouteCommand())
         ..addCommand(ScreenshotCommand())
         ..addCommand(StopCommand());

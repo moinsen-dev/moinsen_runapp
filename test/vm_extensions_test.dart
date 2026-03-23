@@ -103,6 +103,29 @@ void main() {
       expect(data['prompt'], contains('StateError'));
     });
 
+    test('getLifecycle returns state when not installed', () {
+      final json = handleGetLifecycle();
+      final data = jsonDecode(json) as Map<String, dynamic>;
+
+      expect(data['currentState'], 'unknown');
+      expect(data['history'], isEmpty);
+    });
+
+    test('getDeviceInfo returns device context', () {
+      final json = handleGetDeviceInfo();
+      final data = jsonDecode(json) as Map<String, dynamic>;
+
+      expect(data, containsPair('os', isA<String>()));
+      expect(data, containsPair('devicePixelRatio', isA<double>()));
+      expect(data, containsPair('logicalWidth', isA<double>()));
+      expect(data, containsPair('locale', isA<String>()));
+      expect(data, containsPair('platformBrightness', isA<String>()));
+      expect(
+        data,
+        containsPair('accessibilityFeatures', isA<Map<String, dynamic>>()),
+      );
+    });
+
     test('getPrompt returns empty report when no errors', () {
       final json = handleGetPrompt(bucket, logBuffer);
       final data = jsonDecode(json) as Map<String, dynamic>;

@@ -3,38 +3,46 @@
 [![pub package](https://img.shields.io/pub/v/moinsen_runapp.svg)](https://pub.dev/packages/moinsen_runapp)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-The universal LLM debug bridge for Flutter. Drop-in `runApp()` replacement with three-layer error catching, app-level logging, navigation tracking, screenshot capture, and a CLI tool for live LLM-assisted debugging.
+The universal LLM debug bridge for Flutter. Drop-in `runApp()` replacement with three-layer error catching, app-level logging, navigation tracking, screenshot capture, device context, lifecycle tracking, HTTP monitoring, state inspection, and a CLI tool for live LLM-assisted debugging.
 
 ## Why?
 
 Flutter's default error handling lets errors slip through the cracks. An uncaught async error kills your app. A widget build error shows the infamous red screen of death. Init failures crash before users see anything.
 
-`moinsen_runapp` catches **everything**, keeps your app running, and gives LLM tools like Claude Code full visibility into your app's state.
+`moinsen_runapp` catches **everything**, keeps your app running, and gives LLM tools like Claude Code full visibility into your app's state — not just *what* went wrong, but *why*.
 
 ## Features
 
+### Error Handling
 - **Three-layer error catching** — Flutter framework errors, platform dispatcher errors, and zone-level uncaught errors. Nothing escapes.
 - **App always starts** — Init failures are caught and logged but never prevent launch.
 - **Error deduplication** — Identical errors within a configurable time window are counted, not repeated.
 - **Beautiful release screens** — Three built-in variants (friendly, minimal, illustrated) with automatic dark/light mode support.
 - **Rich debug screen** — Expandable error tiles with source badges, dedup counts, full stack traces, and a "Copy All" button.
-- **App-level logging** — `moinsenLog()` surfaces navigation events, API calls, and state changes to external tooling.
-- **Navigation tracking** — `MoinsenNavigatorObserver` tracks route changes, exposes history, and enables programmatic navigation.
-- **Screenshot capture** — Capture the current screen as PNG via VM Service or CLI. No `RepaintBoundary` needed.
-- **LLM context command** — `moinsen_run context` aggregates errors, logs, routes, screenshots, and widget tree into one markdown document.
-- **CLI tool** — `moinsen_run` wraps `flutter run` and exposes 16 commands for querying and controlling your app.
-- **9 VM Service extensions** — `ext.moinsen.*` endpoints let any tool query app state live via the Dart VM Service Protocol.
 - **Smart console logging** — Full output for the first few errors, then automatic burst compression.
 - **Optional file logging** — Write errors to disk with automatic 1 MB rotation.
 - **External error reporting** — `onError` callback for forwarding to Sentry, Crashlytics, or any backend.
+
+### LLM Context (Agentic Ready)
+- **App-level logging** — `moinsenLog()` surfaces navigation events, API calls, and state changes to external tooling.
+- **Navigation tracking** — `MoinsenNavigatorObserver` tracks route changes, exposes history, and enables programmatic navigation.
+- **Screenshot capture** — Capture the current screen as PNG via VM Service or CLI. No `RepaintBoundary` needed.
+- **Device & environment info** — Screen dimensions, pixel ratio, locale, brightness, text scale factor, accessibility features, OS version.
+- **App lifecycle tracking** — Automatic `AppLifecycleState` transition recording with timestamps. Know when the app went to background.
+- **HTTP/network monitoring** — Zero-config interception of all `dart:io` HTTP traffic. Records method, URL, status, duration, and sanitized headers.
+- **State inspection** — Opt-in API for exposing app state (Bloc, Riverpod, Provider — anything) to LLM tools via lazy snapshot functions.
+- **LLM context command** — `moinsen_run context` aggregates everything into one structured markdown document optimized for LLM consumption.
+
+### Tooling
+- **CLI tool** — `moinsen_run` wraps `flutter run` and exposes 20 commands for querying and controlling your app.
+- **13 VM Service extensions** — `ext.moinsen.*` endpoints let any tool query app state live via the Dart VM Service Protocol.
 - **Zero configuration required** — Works out of the box with sensible defaults. One line to integrate.
-- **All Flutter platforms** — iOS, Android, web, macOS, Windows, Linux.
 
 ## Installation
 
 ```yaml
 dependencies:
-  moinsen_runapp: ^0.4.0
+  moinsen_runapp: ^0.5.0
 ```
 
 Or run:
@@ -71,7 +79,14 @@ moinsenLog('User tapped checkout', source: 'cart', level: 'info');
 moinsenLog('API returned 500', source: 'api', level: 'error');
 ```
 
-That's it. Your app now has error catching, log capture, route tracking, and full LLM debugging support.
+### 4. Expose state for LLM debugging (optional)
+
+```dart
+moinsenExposeState('cart', () => cartBloc.state.toJson());
+moinsenExposeState('user', () => userRepo.currentUser?.toJson());
+```
+
+That's it. Your app now has error catching, log capture, route tracking, device context, lifecycle tracking, HTTP monitoring, and full LLM debugging support.
 
 ## With Initialization
 
@@ -101,6 +116,8 @@ void main() {
       logToFile: true,
       logBufferCapacity: 500,          // default: 200
       screenshotMaxDimension: 1080,    // cap screenshot resolution
+      monitorHttp: true,               // default: true, set false to disable
+      httpBufferCapacity: 100,         // default: 100
     ),
     onError: (error, stackTrace) {
       Sentry.captureException(error, stackTrace: stackTrace);
@@ -158,10 +175,24 @@ dart run moinsen_runapp:moinsen_run logs --last 20
 # Get current route and navigation history
 dart run moinsen_runapp:moinsen_run route
 
+# Get device and environment information
+dart run moinsen_runapp:moinsen_run device
+
+# Get app lifecycle state and transition history
+dart run moinsen_runapp:moinsen_run lifecycle
+
+# Get HTTP/network traffic (all or errors only)
+dart run moinsen_runapp:moinsen_run network
+dart run moinsen_runapp:moinsen_run network --errors --last 10
+
+# Inspect registered app state
+dart run moinsen_runapp:moinsen_run inspect
+dart run moinsen_runapp:moinsen_run inspect cart
+
 # Capture a screenshot (saved as PNG)
 dart run moinsen_runapp:moinsen_run screenshot
 
-# Get full LLM-ready context (errors + logs + route + optional screenshot)
+# Get full LLM-ready context (errors + logs + route + device + lifecycle + network + state)
 dart run moinsen_runapp:moinsen_run context --with-screenshot --with-tree
 ```
 
@@ -196,6 +227,10 @@ dart run moinsen_runapp:moinsen_run stop
 | `prompt` | Get LLM-ready markdown bug report |
 | `logs` | Get recent log entries (`--last N`, default 50) |
 | `route` | Get current route and navigation history |
+| `device` | Get device and environment information |
+| `lifecycle` | Get app lifecycle state and transition history |
+| `network` | Get HTTP/network traffic (`--errors`, `--last N`) |
+| `inspect` | Inspect registered app state (`inspect [key]`) |
 | `screenshot` | Capture screen as PNG |
 | `navigate` | Push a named route (`--push`) or pop (`--pop`) |
 | `context` | Full LLM-ready context (`--with-screenshot`, `--with-tree`, `--log-count`, `--format`) |
@@ -208,7 +243,7 @@ dart run moinsen_runapp:moinsen_run stop
 
 ## VM Service Extensions
 
-In debug and profile mode, `moinsenRunApp()` automatically registers nine VM Service extensions:
+In debug mode, `moinsenRunApp()` automatically registers thirteen VM Service extensions:
 
 | Extension | Returns |
 |---|---|
@@ -217,10 +252,14 @@ In debug and profile mode, `moinsenRunApp()` automatically registers nine VM Ser
 | `ext.moinsen.getInfo` | `{package, errorCount, uniqueErrors, platform}` |
 | `ext.moinsen.getLogs` | `{logs: [...], capacity, size}` |
 | `ext.moinsen.getPrompt` | `{prompt: "# Enhanced Bug Report\n..."}` |
-| `ext.moinsen.screenshot` | `{png: "<base64>", width, height}` |
+| `ext.moinsen.screenshot` | `{screenshot: "<base64>", width, height}` |
 | `ext.moinsen.getRoute` | `{currentRoute, observerInstalled, history: [...]}` |
-| `ext.moinsen.navigate` | `{success: true}` (params: `action`, `route`) |
-| `ext.moinsen.getContext` | `{context: "# App Context Report\n..."}` |
+| `ext.moinsen.navigate` | `{navigated: true, action, route}` |
+| `ext.moinsen.getContext` | `{errors, logs, route, device, lifecycle, network, state, ...}` |
+| `ext.moinsen.getDeviceInfo` | `{os, logicalWidth, logicalHeight, devicePixelRatio, locale, platformBrightness, accessibilityFeatures, ...}` |
+| `ext.moinsen.getLifecycle` | `{currentState, uptime_ms, history: [...]}` |
+| `ext.moinsen.getNetwork` | `{totalCount, errorCount, avgDuration_ms, requests: [...]}` |
+| `ext.moinsen.getState` | `{registeredKeys: [...], states: {...}}` |
 
 These extensions are what the CLI tool uses under the hood. Any tool that speaks the Dart VM Service Protocol can call them directly.
 
@@ -255,6 +294,111 @@ This enables:
 - `moinsen_run navigate --push /settings` — push routes programmatically
 - `moinsen_run navigate --pop` — pop the current route
 - Route info in `prompt` and `context` output
+
+## Device & Environment Info
+
+Automatically collected at query time — no configuration needed. Gives LLMs the context to diagnose layout bugs:
+
+```json
+{
+  "os": "android",
+  "osVersion": "14",
+  "dartVersion": "3.11.3",
+  "devicePixelRatio": 3.0,
+  "logicalWidth": 393.0,
+  "logicalHeight": 851.0,
+  "locale": "de-DE",
+  "textScaleFactor": 1.0,
+  "platformBrightness": "dark",
+  "accessibilityFeatures": {
+    "boldText": false,
+    "highContrast": false,
+    "disableAnimations": false,
+    "reduceMotion": false
+  }
+}
+```
+
+When an LLM sees `RenderFlex overflowed by 42 pixels`, it now knows whether the device is a 320px phone in landscape or a tablet.
+
+## App Lifecycle Tracking
+
+`MoinsenLifecycleObserver` is automatically registered by `moinsenRunApp()`. It tracks `AppLifecycleState` transitions:
+
+```json
+{
+  "currentState": "resumed",
+  "uptime_ms": 342500,
+  "history": [
+    {"state": "inactive", "previousState": "resumed", "timestamp": "..."},
+    {"state": "paused", "previousState": "inactive", "timestamp": "..."},
+    {"state": "resumed", "previousState": "paused", "timestamp": "..."}
+  ]
+}
+```
+
+When an LLM sees `WebSocket disconnected`, it can now check: "The app went to background 2 seconds before the error."
+
+## HTTP/Network Monitoring
+
+All `dart:io` HTTP traffic is automatically intercepted via `HttpOverrides`. This also captures traffic from `package:http` and `package:dio` since they use `HttpClient` internally.
+
+```json
+{
+  "totalCount": 12,
+  "errorCount": 1,
+  "avgDuration_ms": 187,
+  "requests": [
+    {
+      "method": "GET",
+      "url": "https://api.example.com/users",
+      "statusCode": 200,
+      "duration_ms": 142,
+      "timestamp": "2026-03-23T14:32:05.000"
+    },
+    {
+      "method": "POST",
+      "url": "https://api.example.com/auth",
+      "statusCode": 500,
+      "duration_ms": 340,
+      "error": "Internal Server Error",
+      "timestamp": "2026-03-23T14:32:06.000"
+    }
+  ]
+}
+```
+
+**Security:** `Authorization`, `Cookie`, `Set-Cookie`, and `Proxy-Authorization` headers are automatically redacted to `[REDACTED]` before storage. Request/response bodies are never stored.
+
+Disable HTTP monitoring with `RunAppConfig(monitorHttp: false)`.
+
+## State Inspection
+
+Register snapshot functions to expose app state to LLM tools:
+
+```dart
+// Register state providers (lazy — only called when queried)
+moinsenExposeState('cart', () => cartBloc.state.toJson());
+moinsenExposeState('user', () => {
+  'name': userRepo.currentUser?.name,
+  'isAuthenticated': authService.isLoggedIn,
+});
+
+// Remove when no longer needed
+moinsenHideState('cart');
+```
+
+Query via CLI:
+
+```bash
+# Get all registered states
+dart run moinsen_runapp:moinsen_run inspect
+
+# Get a specific state
+dart run moinsen_runapp:moinsen_run inspect cart
+```
+
+Works with any state management — Bloc, Riverpod, Provider, GetX, or plain Dart. The package has zero dependency on any state management library.
 
 ## Custom Error Screens
 
@@ -295,14 +439,17 @@ moinsenRunApp(
   │ moinsen_run       │──starts──────▶│ runZonedGuarded (layer 3)        │
   │ moinsen_run errors│               │  PlatformDispatcher.onError (2)  │
   │ moinsen_run prompt│──VM Service──▶│  FlutterError.onError (1)        │
-  │ moinsen_run logs  │               │  Your App (ErrorBoundaryWidget)  │
-  │ moinsen_run route │               │  MoinsenNavigatorObserver        │
-  │ moinsen_run screensht             │  moinsenLog() → LogBuffer        │
-  │ moinsen_run context│              └──────────────┬───────────────────┘
-  └────────┬─────────┘                               │
-           │                                All errors funnel into:
-  .moinsen_run.json                                  ▼
-  (VM Service URI, PID)               ┌─────────────────────────┐
+  │ moinsen_run device│               │  Your App (ErrorBoundaryWidget)  │
+  │ moinsen_run network               │  MoinsenNavigatorObserver        │
+  │ moinsen_run inspect               │  MoinsenLifecycleObserver        │
+  │ moinsen_run context│              │  MoinsenHttpMonitor (HttpOverrides)
+  └────────┬─────────┘               │  moinsenLog() → LogBuffer        │
+           │                          │  moinsenExposeState() → Registry │
+  .moinsen_run.json                   └──────────────┬───────────────────┘
+  (VM Service URI, PID)                              │
+                                      All errors funnel into:
+                                                     ▼
+                                      ┌─────────────────────────┐
                                       │      ErrorBucket        │ ← dedup by hash
                                       └────────────┬────────────┘
                                                    │
@@ -311,12 +458,13 @@ moinsenRunApp(
             ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
             │  ErrorObserver   │  │    LogBuffer     │  │  VM Extensions   │
             │ (ChangeNotifier) │  │ (ring buffer,    │  │ ext.moinsen.*    │
-            └────────┬─────────┘  │  capacity 200)   │  │ (9 endpoints)    │
+            └────────┬─────────┘  │  capacity 200)   │  │ (13 endpoints)   │
                      │            └──────────────────┘  └──────────────────┘
             ┌────────▼─────────┐         ▲
             │  ErrorBoundary   │         │
-            │  Widget (Stack)  │   ScreenshotService
-            └──────────────────┘   NavigatorObserver
+            │  Widget (Stack)  │   ScreenshotService    DeviceInfoCollector
+            └──────────────────┘   NavigatorObserver     LifecycleObserver
+                                   HttpMonitor           StateRegistry
 ```
 
 1. **Zone guard** wraps everything in `runZonedGuarded`. This is the outermost net — catches async errors that escape both Flutter and the platform dispatcher.
@@ -328,7 +476,11 @@ moinsenRunApp(
 7. **Log buffer** is a fixed-capacity ring buffer that captures structured log entries from `moinsenLog()` calls.
 8. **Navigator observer** tracks route changes and enables programmatic navigation via VM Service extensions.
 9. **Screenshot service** captures the current screen directly from the render view's layer tree.
-10. **VM Service extensions** expose nine `ext.moinsen.*` endpoints in debug/profile mode, allowing external tools to query errors, logs, routes, screenshots, and aggregated context live via the Dart VM Service Protocol.
+10. **Lifecycle observer** records `AppLifecycleState` transitions (resumed, paused, inactive, etc.) for diagnosing background-related bugs.
+11. **HTTP monitor** intercepts all `dart:io` HTTP traffic via `HttpOverrides`, recording method, URL, status, duration, and sanitized headers.
+12. **State registry** holds lazy snapshot functions registered via `moinsenExposeState()`, called only when an LLM queries state.
+13. **Device info collector** reads screen dimensions, pixel ratio, locale, brightness, and accessibility features from `PlatformDispatcher`.
+14. **VM Service extensions** expose thirteen `ext.moinsen.*` endpoints in debug mode, allowing external tools to query the full app context live via the Dart VM Service Protocol.
 
 When the error screen is displayed, error capture is automatically **paused** to avoid counting cascading duplicates. It resumes when the user taps "Dismiss" or "Clear & Retry."
 
@@ -353,6 +505,8 @@ When the error screen is displayed, error capture is automatically **paused** to
 | `logToFile` | `false` | Write error summaries to a log file on disk |
 | `logFilePath` | `null` | Explicit log file path (auto-resolved via `path_provider` if null) |
 | `screenshotMaxDimension` | `null` | Cap screenshot resolution in physical pixels |
+| `monitorHttp` | `true` | Intercept and record HTTP traffic via `HttpOverrides` |
+| `httpBufferCapacity` | `100` | Maximum HTTP requests to retain in the ring buffer |
 | `releaseScreenVariant` | `ErrorScreenVariant.friendly` | Built-in release error screen variant |
 | `releaseScreenBuilder` | `null` | Custom release error screen — overrides `releaseScreenVariant` |
 | `debugScreenBuilder` | `null` | Custom debug error screen — overrides the built-in debug overlay |
@@ -365,24 +519,78 @@ void moinsenLog(String message, {String? source, String level = 'info'})
 
 Log a message to the shared log buffer. Messages appear in `ext.moinsen.getLogs`, `moinsen_run logs`, and are included in prompt/context output.
 
+### `moinsenExposeState`
+
+```dart
+void moinsenExposeState(String key, dynamic Function() snapshotFn)
+```
+
+Register a lazy state snapshot function. Called only when an LLM queries state via `ext.moinsen.getState` or `moinsen_run inspect`.
+
+### `moinsenHideState`
+
+```dart
+void moinsenHideState(String key)
+```
+
+Remove a state registration.
+
+### `moinsenReportError`
+
+Manually report caught errors through the full pipeline:
+
+```dart
+try {
+  await riskyOperation();
+} catch (e, stack) {
+  moinsenReportError(e, stack, source: 'api');
+}
+```
+
 ### `MoinsenNavigatorObserver`
 
 | Property / Method | Description |
 |---|---|
 | `MoinsenNavigatorObserver.instance` | Shared singleton instance |
 | `currentRoute` | Current route name (or `null`) |
-| `history` | Unmodifiable list of `RouteRecord` entries |
+| `history` | Unmodifiable list of `RouteRecord` entries (last 20) |
 | `pushNamed(route)` | Push a named route via the observer's navigator |
 | `pop()` | Pop the current route |
 
-### `RouteRecord`
+### `MoinsenLifecycleObserver`
 
-| Property | Type | Description |
-|---|---|---|
-| `action` | `String` | `'push'`, `'pop'`, `'replace'`, or `'remove'` |
-| `routeName` | `String?` | Route name from `RouteSettings.name` |
-| `arguments` | `String?` | String representation of route arguments |
-| `timestamp` | `DateTime` | When this navigation occurred |
+| Property / Method | Description |
+|---|---|
+| `MoinsenLifecycleObserver.instance` | Shared singleton instance |
+| `currentState` | Current `AppLifecycleState` |
+| `history` | Unmodifiable list of `LifecycleRecord` entries (last 50) |
+
+### `MoinsenHttpMonitor`
+
+| Property / Method | Description |
+|---|---|
+| `MoinsenHttpMonitor.instance` | Shared singleton instance |
+| `requests` | Unmodifiable list of `HttpRecord` entries (last 100) |
+| `totalCount` | Total number of recorded requests |
+| `errorCount` | Number of failed requests (4xx, 5xx, connection errors) |
+| `avgDurationMs` | Average request duration in milliseconds |
+
+### `MoinsenStateRegistry`
+
+| Property / Method | Description |
+|---|---|
+| `MoinsenStateRegistry.instance` | Shared singleton instance |
+| `keys` | Registered state key names |
+| `snapshot()` | Take a snapshot of all registered states |
+| `snapshotKey(key)` | Take a snapshot of a specific state |
+| `register(key, snapshotFn)` | Register a snapshot function |
+| `unregister(key)` | Remove a registration |
+
+### `DeviceInfoCollector`
+
+| Method | Description |
+|---|---|
+| `DeviceInfoCollector.collect()` | Collect current device/environment info as `Map<String, dynamic>` |
 
 ### `ErrorEntry`
 
@@ -401,17 +609,36 @@ Each error tracked by the system is represented as an `ErrorEntry`. Custom scree
 | `label` | `String` | Short human-readable label (truncated to 120 chars) |
 | `span` | `Duration` | Duration between first and last occurrence |
 
-### `moinsenReportError`
+### `RouteRecord`
 
-Manually report caught errors through the full pipeline:
+| Property | Type | Description |
+|---|---|---|
+| `action` | `String` | `'push'`, `'pop'`, `'replace'`, or `'remove'` |
+| `routeName` | `String?` | Route name from `RouteSettings.name` |
+| `arguments` | `String?` | String representation of route arguments |
+| `timestamp` | `DateTime` | When this navigation occurred |
 
-```dart
-try {
-  await riskyOperation();
-} catch (e, stack) {
-  moinsenReportError(e, stack, source: 'api');
-}
-```
+### `LifecycleRecord`
+
+| Property | Type | Description |
+|---|---|---|
+| `state` | `AppLifecycleState` | The new lifecycle state |
+| `previousState` | `AppLifecycleState` | The state before this transition |
+| `timestamp` | `DateTime` | When this transition occurred |
+
+### `HttpRecord`
+
+| Property | Type | Description |
+|---|---|---|
+| `method` | `String` | HTTP method (GET, POST, etc.) |
+| `url` | `String` | Request URL |
+| `statusCode` | `int?` | HTTP status code (null for connection errors) |
+| `durationMs` | `int` | Request duration in milliseconds |
+| `timestamp` | `DateTime` | When the request was made |
+| `requestSize` | `int?` | Request body size in bytes |
+| `responseSize` | `int?` | Response body size in bytes |
+| `error` | `String?` | Error message (for failed requests) |
+| `isError` | `bool` | `true` for 4xx, 5xx, or connection errors |
 
 ### `ScreenshotService`
 
@@ -426,6 +653,17 @@ try {
 | `bytes` | `Uint8List` | PNG image bytes |
 | `width` | `int` | Image width in physical pixels |
 | `height` | `int` | Image height in physical pixels |
+
+## Platform Support
+
+| Platform | Supported |
+|---|---|
+| iOS | Yes |
+| Android | Yes |
+| macOS | Yes |
+| Windows | Yes |
+| Linux | Yes |
+| Web | No (`dart:io` required for HTTP monitoring and platform detection) |
 
 ## License
 

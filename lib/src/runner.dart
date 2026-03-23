@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:developer' as developer;
+import 'dart:io' show HttpOverrides;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -10,7 +11,11 @@ import 'package:moinsen_runapp/src/error_entry.dart';
 import 'package:moinsen_runapp/src/error_file_logger.dart';
 import 'package:moinsen_runapp/src/error_logger.dart';
 import 'package:moinsen_runapp/src/error_observer.dart';
+import 'package:moinsen_runapp/src/http_monitor.dart';
+import 'package:moinsen_runapp/src/http_overrides.dart';
+import 'package:moinsen_runapp/src/lifecycle_observer.dart';
 import 'package:moinsen_runapp/src/log_buffer.dart';
+import 'package:moinsen_runapp/src/state_registry.dart';
 import 'package:moinsen_runapp/src/ui/error_boundary_widget.dart';
 import 'package:moinsen_runapp/src/vm_extensions.dart';
 import 'package:path_provider/path_provider.dart';
@@ -108,6 +113,30 @@ void resetGlobalLogBuffer() {
   _globalLogBuffer = null;
 }
 
+// ---------------------------------------------------------------------------
+// Global state inspection
+// ---------------------------------------------------------------------------
+
+/// Expose a state snapshot to LLM debugging tools.
+///
+/// Register a function under [key] that returns the current state
+/// as a JSON-serializable value. The function is called lazily only
+/// when an LLM queries state via `ext.moinsen.getState`.
+///
+/// ```dart
+/// moinsenExposeState('cart', () => cartBloc.state.toJson());
+/// ```
+void moinsenExposeState(String key, dynamic Function() snapshotFn) {
+  MoinsenStateRegistry.instance.register(key, snapshotFn);
+}
+
+/// Remove a state registration.
+void moinsenHideState(String key) {
+  if (MoinsenStateRegistry.isInstalled) {
+    MoinsenStateRegistry.instance.unregister(key);
+  }
+}
+
 /// Set up a log buffer for testing [moinsenLog].
 @visibleForTesting
 void setupTestLogBuffer(LogBuffer buffer) {
@@ -166,7 +195,20 @@ void moinsenRunApp({
         ..setupFlutterErrorHandler()
         ..setupPlatformDispatcher();
 
-      // 5. Register VM Service extensions for CLI/tooling access.
+      // 5. Register lifecycle observer for app state tracking.
+      WidgetsBinding.instance.addObserver(MoinsenLifecycleObserver.instance);
+
+      // 5b. Install HTTP monitoring (opt-out via config).
+      if (config.monitorHttp) {
+        MoinsenHttpMonitor.instanceWithCapacity(
+          config.httpBufferCapacity,
+        );
+        HttpOverrides.global = MoinsenHttpOverrides(
+          previous: HttpOverrides.current,
+        );
+      }
+
+      // 6. Register VM Service extensions for CLI/tooling access.
       if (kDebugMode) {
         registerMoinsenExtensions(
           bucket: bucket,

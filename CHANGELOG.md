@@ -1,3 +1,40 @@
+## 0.5.0 — Agentic Ready
+
+moinsen_runapp now provides the full environmental context an LLM needs to diagnose and fix Flutter app issues — not just what went wrong, but why.
+
+### Added
+
+- **Device & Environment Info** — Screen dimensions, pixel ratio, locale, brightness, text scale factor, OS version, Dart version, and accessibility features. Exposed via `ext.moinsen.getDeviceInfo` VM extension and `moinsen_run device` CLI command. Now an LLM knows whether a `RenderFlex overflow` is a small-phone problem or a tablet layout bug.
+- **App Lifecycle Tracking** — `MoinsenLifecycleObserver` automatically tracks `AppLifecycleState` transitions (resumed, inactive, paused, detached, hidden) with timestamps. Exposed via `ext.moinsen.getLifecycle` and `moinsen_run lifecycle`. Helps diagnose "WebSocket disconnected" bugs caused by background transitions.
+- **HTTP/Network Traffic Monitor** — Zero-config HTTP interception via `HttpOverrides`. Records method, URL, status code, duration, and sanitized headers (Authorization/Cookie automatically redacted). Ring buffer of last 100 requests. Exposed via `ext.moinsen.getNetwork` and `moinsen_run network [--errors] [--last N]`. Opt-out via `RunAppConfig.monitorHttp`.
+- **State Inspection Registry** — Opt-in API for exposing app state to LLM tools. `moinsenExposeState('cart', () => cartBloc.state.toJson())` registers lazy snapshot functions called only when queried. Exposed via `ext.moinsen.getState` and `moinsen_run inspect [key]`.
+- **Enriched Context Report** — `ext.moinsen.getContext` and `moinsen_run context` now include device info, lifecycle state, network traffic, and app state alongside errors, logs, and navigation. New `## Available Actions` section tells the LLM what it can do.
+
+### CLI commands (4 new, 20 total)
+
+| Command | Description |
+|---------|------------|
+| `device` | Get device and environment information |
+| `lifecycle` | Get app lifecycle state and transition history |
+| `network` | Get HTTP/network traffic (`--errors`, `--last N`) |
+| `inspect` | Inspect registered app state (`inspect [key]`) |
+
+### VM Service extensions (4 new, 13 total)
+
+| Extension | Description |
+|-----------|------------|
+| `ext.moinsen.getDeviceInfo` | Device context (screen, locale, a11y) |
+| `ext.moinsen.getLifecycle` | Lifecycle state and transition history |
+| `ext.moinsen.getNetwork` | HTTP traffic ring buffer |
+| `ext.moinsen.getState` | Registered app state snapshots |
+
+### New public API
+
+- `moinsenExposeState(key, snapshotFn)` — Register state for LLM access
+- `moinsenHideState(key)` — Remove state registration
+- `RunAppConfig.monitorHttp` — Enable/disable HTTP monitoring (default: true)
+- `RunAppConfig.httpBufferCapacity` — HTTP ring buffer size (default: 100)
+
 ## 0.4.0 — LLM Debug Bridge
 
 moinsen_runapp is now the universal LLM debug bridge for Flutter apps.
