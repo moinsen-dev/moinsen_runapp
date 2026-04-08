@@ -1,3 +1,7 @@
+## 0.6.1
+
+- Fix skill directory naming to match `skills` package convention (`moinsen_runapp-skill` instead of `moinsen-runapp`).
+
 ## 0.6.0 — Remote Control & MCP Server
 
 moinsen_runapp evolves from observation-only to full remote control. AI agents can now see what's on screen, tap buttons, enter text, scroll, and verify results — all through VM Service extensions, CLI commands, or the new MCP server.
