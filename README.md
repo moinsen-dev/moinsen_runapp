@@ -60,14 +60,20 @@ flutter pub add moinsen_runapp
 
 ### AI Agent Skills
 
-This package includes AI agent skills that teach tools like Claude Code and Cursor how to use moinsen_runapp. Install them with the [`skills`](https://pub.dev/packages/skills) CLI:
+Install the bundled AI agent skill for Claude Code or Cursor:
 
 ```bash
-dart pub global activate skills
-skills get
+# Project-level (default)
+dart run moinsen_runapp:moinsen_run install-skill
+
+# User-level (global)
+dart run moinsen_runapp:moinsen_run install-skill --global
+
+# For Cursor instead of Claude
+dart run moinsen_runapp:moinsen_run install-skill --ide cursor
 ```
 
-This copies the skill definitions from the package into your IDE's skills directory.
+Or use the [`skills`](https://pub.dev/packages/skills) CLI: `skills get`
 
 ## Quick Start
 

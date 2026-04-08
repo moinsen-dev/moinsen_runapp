@@ -1,3 +1,7 @@
+## 0.6.2
+
+- Add `install-skill` CLI command for installing the AI agent skill directly into `.claude/skills/` or `.cursor/skills/` (project or global level).
+
 ## 0.6.1
 
 - Fix skill directory naming to match `skills` package convention (`moinsen_runapp-skill` instead of `moinsen-runapp`).
