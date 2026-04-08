@@ -1,5 +1,5 @@
 ---
-name: moinsen-runapp
+name: moinsen_runapp-skill
 description: Use when working with Flutter apps that use moinsen_runapp — for setup, configuration, state exposure, error reporting, HTTP monitoring, UI interaction (tap, scroll, text input), MCP server setup, and LLM-assisted debugging via CLI, VM Service extensions, or MCP tools.
 ---
 
