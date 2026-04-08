@@ -208,10 +208,29 @@ The `moinsen_mcp` executable exposes all capabilities as 21 MCP tools for AI age
 ### Setup
 
 ```bash
+# Global install (recommended)
+dart pub global activate moinsen_runapp
+moinsen_mcp
+
+# Or from a project
 dart run moinsen_runapp:moinsen_mcp
 ```
 
 ### Claude Code / Cursor Integration
+
+With global installation (recommended):
+
+```json
+{
+  "mcpServers": {
+    "moinsen": {
+      "command": "moinsen_mcp"
+    }
+  }
+}
+```
+
+Without global installation:
 
 ```json
 {

@@ -1,3 +1,8 @@
+## 0.6.3
+
+- Document global installation via `dart pub global activate moinsen_runapp` for `moinsen_run` and `moinsen_mcp` executables.
+- Simplify MCP server configuration with global install (just `"command": "moinsen_mcp"`).
+
 ## 0.6.2
 
 - Add `install-skill` CLI command for installing the AI agent skill directly into `.claude/skills/` or `.cursor/skills/` (project or global level).

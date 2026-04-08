@@ -47,6 +47,8 @@ Flutter's default error handling lets errors slip through the cracks. An uncaugh
 
 ## Installation
 
+### As a project dependency
+
 ```yaml
 dependencies:
   moinsen_runapp: ^0.6.0
@@ -58,19 +60,31 @@ Or run:
 flutter pub add moinsen_runapp
 ```
 
+### Global installation
+
+Install the CLI tools (`moinsen_run`, `moinsen_mcp`) globally so they are available from any directory:
+
+```bash
+dart pub global activate moinsen_runapp
+```
+
+This makes both executables available on your PATH:
+- `moinsen_run` — CLI bridge for querying and controlling Flutter apps
+- `moinsen_mcp` — MCP server for AI agent integration
+
 ### AI Agent Skills
 
 Install the bundled AI agent skill for Claude Code or Cursor:
 
 ```bash
 # Project-level (default)
-dart run moinsen_runapp:moinsen_run install-skill
+moinsen_run install-skill
 
 # User-level (global)
-dart run moinsen_runapp:moinsen_run install-skill --global
+moinsen_run install-skill --global
 
 # For Cursor instead of Claude
-dart run moinsen_runapp:moinsen_run install-skill --ide cursor
+moinsen_run install-skill --ide cursor
 ```
 
 Or use the [`skills`](https://pub.dev/packages/skills) CLI: `skills get`
@@ -356,15 +370,33 @@ All standard Flutter widgets (ElevatedButton, TextField, Text, etc.) are support
 
 ## MCP Server
 
-The `moinsen_mcp` executable exposes all capabilities as MCP tools for AI agents:
+The `moinsen_mcp` executable exposes all capabilities as 21 MCP tools for AI agents.
+
+### Run the MCP server
 
 ```bash
+# From a project with moinsen_runapp as dependency
 dart run moinsen_runapp:moinsen_mcp
+
+# Or globally (after `dart pub global activate moinsen_runapp`)
+moinsen_mcp
 ```
 
 ### Claude Code / Cursor Integration
 
-Add to your MCP configuration:
+Add to your MCP configuration. With global installation (recommended):
+
+```json
+{
+  "mcpServers": {
+    "moinsen": {
+      "command": "moinsen_mcp"
+    }
+  }
+}
+```
+
+Or without global installation:
 
 ```json
 {
