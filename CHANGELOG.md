@@ -1,3 +1,67 @@
+## 0.6.0 — Remote Control & MCP Server
+
+moinsen_runapp evolves from observation-only to full remote control. AI agents can now see what's on screen, tap buttons, enter text, scroll, and verify results — all through VM Service extensions, CLI commands, or the new MCP server.
+
+### Added
+
+- **UI Interaction** (opt-in via `enableInteraction: true`) — Remote-control the app through 4 new VM extensions and CLI commands:
+  - `ext.moinsen.getInteractiveElements` / `moinsen_run elements` — Discover all interactive widgets on screen with type, key, text, bounds, and visibility
+  - `ext.moinsen.tap` / `moinsen_run tap` — Tap elements by key, text, widget type, or screen coordinates
+  - `ext.moinsen.enterText` / `moinsen_run enter-text` — Type text into fields via controller manipulation
+  - `ext.moinsen.scrollTo` / `moinsen_run scroll-to` — Scroll until a target element becomes visible (max 50 attempts)
+- **Widget Matching** — 4-strategy sealed class: `CoordinatesMatcher` (fastest, skips tree), `KeyMatcher`, `TextMatcher`, `TypeStringMatcher`. Precedence: coordinates > key > text > type.
+- **InteractionConfig** — Extensible widget support via callbacks: `isInteractiveWidget`, `shouldStopTraversal`, `extractText`. Built-in support for all standard Flutter widgets (buttons, text fields, switches, etc.).
+- **MCP Server** (`moinsen_mcp` executable) — Model Context Protocol server exposing all 17 extensions as MCP tools for AI agents (Claude Code, Cursor, etc.). Includes 2 composite tools:
+  - `observe` — Full context + screenshot + interactive elements in one call
+  - `interact_and_verify` — Execute action, wait 300ms, take verification screenshot
+- **Enhanced Context Report** — `getContext` and `generateContext` now include an `## Interactive Elements` section and expanded `## Available Actions` when interaction is enabled.
+
+### RunAppConfig (2 new fields)
+
+| Field | Default | Description |
+|-------|---------|-------------|
+| `enableInteraction` | `false` | Enable UI interaction VM extensions |
+| `interactionConfig` | `InteractionConfig()` | Callbacks for custom widget support |
+
+### CLI commands (4 new, 24 total)
+
+| Command | Description |
+|---------|-------------|
+| `elements` | Get interactive elements on screen |
+| `tap` | Tap element (`--key`, `--text`, `--type`, `--x`/`--y`) |
+| `enter-text` | Enter text (`--key`/`--text`/`--type` + `--input`) |
+| `scroll-to` | Scroll until visible (`--key`, `--text`) |
+
+### VM Service extensions (4 new, 17 total)
+
+| Extension | Description |
+|-----------|-------------|
+| `ext.moinsen.getInteractiveElements` | Interactive widget discovery |
+| `ext.moinsen.tap` | Tap by key/text/type/coordinates |
+| `ext.moinsen.enterText` | Text input via controller |
+| `ext.moinsen.scrollTo` | Scroll until visible |
+
+### MCP Server (21 tools)
+
+New `moinsen_mcp` executable: `dart run moinsen_runapp:moinsen_mcp`
+
+| Category | Tools |
+|----------|-------|
+| Connection | `connect`, `disconnect` |
+| Observation | `get_errors`, `clear_errors`, `get_logs`, `get_route`, `get_device_info`, `get_lifecycle`, `get_network`, `get_state`, `take_screenshot`, `get_prompt` |
+| Interaction | `get_interactive_elements`, `tap`, `enter_text`, `scroll_to` |
+| Control | `navigate`, `hot_reload`, `hot_restart` |
+| Composite | `observe`, `interact_and_verify` |
+
+### Architecture
+
+- No custom binding — interaction uses `GestureBinding.instance`, compatible with any Flutter binding
+- Hit-test validation ensures only actually interactable elements are reported
+- Element tree traversal with configurable stop rules and text extraction
+- Gesture dispatch via low-level `PointerEvent` records (tap + drag)
+
+---
+
 ## 0.5.0 — Agentic Ready
 
 moinsen_runapp now provides the full environmental context an LLM needs to diagnose and fix Flutter app issues — not just what went wrong, but why.

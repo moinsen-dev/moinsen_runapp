@@ -3,7 +3,7 @@
 [![pub package](https://img.shields.io/pub/v/moinsen_runapp.svg)](https://pub.dev/packages/moinsen_runapp)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
-The universal LLM debug bridge for Flutter. Drop-in `runApp()` replacement with three-layer error catching, app-level logging, navigation tracking, screenshot capture, device context, lifecycle tracking, HTTP monitoring, state inspection, and a CLI tool for live LLM-assisted debugging.
+The universal LLM debug bridge for Flutter. Drop-in `runApp()` replacement with three-layer error catching, app-level logging, navigation tracking, screenshot capture, device context, lifecycle tracking, HTTP monitoring, state inspection, remote UI interaction (tap, scroll, text input), and an MCP server for AI agent integration.
 
 ## Why?
 
@@ -33,16 +33,23 @@ Flutter's default error handling lets errors slip through the cracks. An uncaugh
 - **State inspection** — Opt-in API for exposing app state (Bloc, Riverpod, Provider — anything) to LLM tools via lazy snapshot functions.
 - **LLM context command** — `moinsen_run context` aggregates everything into one structured markdown document optimized for LLM consumption.
 
+### Remote UI Interaction (opt-in)
+- **Interactive element discovery** — See all tappable widgets on screen with type, key, text, bounds, and visibility.
+- **Tap, scroll, enter text** — Remote-control the app by key, text content, widget type, or screen coordinates.
+- **Widget matching** — 4 strategies with configurable callbacks for custom widgets.
+- **Hit-test validation** — Only reports elements that can actually receive pointer events.
+
 ### Tooling
-- **CLI tool** — `moinsen_run` wraps `flutter run` and exposes 20 commands for querying and controlling your app.
-- **13 VM Service extensions** — `ext.moinsen.*` endpoints let any tool query app state live via the Dart VM Service Protocol.
+- **CLI tool** — `moinsen_run` wraps `flutter run` and exposes 24 commands for querying and controlling your app.
+- **MCP server** — `moinsen_mcp` exposes all capabilities as 21 MCP tools for AI agents (Claude Code, Cursor, etc.).
+- **17 VM Service extensions** — `ext.moinsen.*` endpoints let any tool query and control app state live.
 - **Zero configuration required** — Works out of the box with sensible defaults. One line to integrate.
 
 ## Installation
 
 ```yaml
 dependencies:
-  moinsen_runapp: ^0.5.0
+  moinsen_runapp: ^0.6.0
 ```
 
 Or run:
@@ -50,6 +57,17 @@ Or run:
 ```bash
 flutter pub add moinsen_runapp
 ```
+
+### AI Agent Skills
+
+This package includes AI agent skills that teach tools like Claude Code and Cursor how to use moinsen_runapp. Install them with the [`skills`](https://pub.dev/packages/skills) CLI:
+
+```bash
+dart pub global activate skills
+skills get
+```
+
+This copies the skill definitions from the package into your IDE's skills directory.
 
 ## Quick Start
 
@@ -118,6 +136,7 @@ void main() {
       screenshotMaxDimension: 1080,    // cap screenshot resolution
       monitorHttp: true,               // default: true, set false to disable
       httpBufferCapacity: 100,         // default: 100
+      enableInteraction: true,         // enable tap/scroll/text input
     ),
     onError: (error, stackTrace) {
       Sentry.captureException(error, stackTrace: stackTrace);
@@ -196,6 +215,24 @@ dart run moinsen_runapp:moinsen_run screenshot
 dart run moinsen_runapp:moinsen_run context --with-screenshot --with-tree
 ```
 
+### Interact with the running app (requires `enableInteraction: true`)
+
+```bash
+# See all interactive elements on screen
+dart run moinsen_runapp:moinsen_run elements
+
+# Tap by key, text, type, or coordinates
+dart run moinsen_runapp:moinsen_run tap --key "submit_button"
+dart run moinsen_runapp:moinsen_run tap --text "Sign In"
+dart run moinsen_runapp:moinsen_run tap --x 200 --y 400
+
+# Enter text into a field
+dart run moinsen_runapp:moinsen_run enter-text --key "email" --input "user@example.com"
+
+# Scroll until element is visible
+dart run moinsen_runapp:moinsen_run scroll-to --key "footer"
+```
+
 ### Control the running app
 
 ```bash
@@ -238,12 +275,16 @@ dart run moinsen_runapp:moinsen_run stop
 | `reload` | Trigger hot reload |
 | `restart` | Trigger hot restart (resets app state) |
 | `state` | Dump widget tree via `debugDumpApp()` |
+| `elements` | Get interactive elements on screen (requires `enableInteraction`) |
+| `tap` | Tap element (`--key`, `--text`, `--type`, `--x`/`--y`) |
+| `enter-text` | Enter text (`--key`/`--text`/`--type` + `--input`) |
+| `scroll-to` | Scroll until visible (`--key`, `--text`) |
 | `analyze` | Run `flutter analyze` with structured output |
 | `stop` | Stop the running app |
 
 ## VM Service Extensions
 
-In debug mode, `moinsenRunApp()` automatically registers thirteen VM Service extensions:
+In debug mode, `moinsenRunApp()` automatically registers VM Service extensions (13 core + 4 interaction when enabled):
 
 | Extension | Returns |
 |---|---|
@@ -261,7 +302,85 @@ In debug mode, `moinsenRunApp()` automatically registers thirteen VM Service ext
 | `ext.moinsen.getNetwork` | `{totalCount, errorCount, avgDuration_ms, requests: [...]}` |
 | `ext.moinsen.getState` | `{registeredKeys: [...], states: {...}}` |
 
-These extensions are what the CLI tool uses under the hood. Any tool that speaks the Dart VM Service Protocol can call them directly.
+With `enableInteraction: true`, four additional extensions are registered:
+
+| Extension | Returns |
+|---|---|
+| `ext.moinsen.getInteractiveElements` | `{elements: [{type, key, text, bounds, visible}], count}` |
+| `ext.moinsen.tap` | `{success: true}` (params: `key`/`text`/`type`/`x`+`y`) |
+| `ext.moinsen.enterText` | `{success: true}` (params: `key`/`text`/`type` + `input`) |
+| `ext.moinsen.scrollTo` | `{success: true}` (params: `key`/`text`) |
+
+These extensions are what the CLI tool and MCP server use under the hood. Any tool that speaks the Dart VM Service Protocol can call them directly.
+
+## UI Interaction (opt-in)
+
+Enable remote UI control for AI agents and testing:
+
+```dart
+moinsenRunApp(
+  config: const RunAppConfig(
+    enableInteraction: true,
+  ),
+  child: const MyApp(),
+);
+```
+
+This registers 4 additional VM extensions for discovering and interacting with widgets. Elements are matched by key (most reliable), text content, widget type, or screen coordinates.
+
+### Custom Widget Support
+
+```dart
+moinsenRunApp(
+  config: RunAppConfig(
+    enableInteraction: true,
+    interactionConfig: InteractionConfig(
+      isInteractiveWidget: (type) => type == MyCustomButton,
+      extractText: (widget) {
+        if (widget is MyLabel) return widget.title;
+        return null;
+      },
+    ),
+  ),
+  child: const MyApp(),
+);
+```
+
+All standard Flutter widgets (ElevatedButton, TextField, Text, etc.) are supported automatically. The callbacks extend support to app-specific custom widgets.
+
+## MCP Server
+
+The `moinsen_mcp` executable exposes all capabilities as MCP tools for AI agents:
+
+```bash
+dart run moinsen_runapp:moinsen_mcp
+```
+
+### Claude Code / Cursor Integration
+
+Add to your MCP configuration:
+
+```json
+{
+  "mcpServers": {
+    "moinsen": {
+      "command": "dart",
+      "args": ["run", "moinsen_runapp:moinsen_mcp"],
+      "cwd": "/path/to/your-flutter-project"
+    }
+  }
+}
+```
+
+### 21 MCP Tools
+
+| Category | Tools |
+|----------|-------|
+| Connection | `connect`, `disconnect` |
+| Observation | `get_errors`, `clear_errors`, `get_logs`, `get_route`, `get_device_info`, `get_lifecycle`, `get_network`, `get_state`, `take_screenshot`, `get_prompt` |
+| Interaction | `get_interactive_elements`, `tap`, `enter_text`, `scroll_to` |
+| Control | `navigate`, `hot_reload`, `hot_restart` |
+| Composite | `observe` (full context + screenshot in one call), `interact_and_verify` (action + verification screenshot) |
 
 ## App-Level Logging
 

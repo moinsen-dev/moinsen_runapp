@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:moinsen_runapp/src/error_entry.dart';
+import 'package:moinsen_runapp/src/interaction/interaction_config.dart';
 
 /// Pre-built error screen variants for release mode.
 enum ErrorScreenVariant {
@@ -34,6 +35,8 @@ class RunAppConfig {
     this.screenshotMaxDimension,
     this.monitorHttp = true,
     this.httpBufferCapacity = 100,
+    this.enableInteraction = false,
+    this.interactionConfig = const InteractionConfig(),
   });
 
   /// Time window for deduplicating identical errors.
@@ -74,4 +77,17 @@ class RunAppConfig {
 
   /// Maximum number of HTTP requests to retain in the ring buffer.
   final int httpBufferCapacity;
+
+  /// Whether to enable UI interaction extensions (tap, scroll, text
+  /// input, interactive element discovery).
+  ///
+  /// When enabled, additional VM Service extensions are registered
+  /// for remote-controlling the app. Defaults to `false`.
+  final bool enableInteraction;
+
+  /// Configuration for interactive element discovery and matching.
+  ///
+  /// Only used when [enableInteraction] is `true`. Provides callbacks
+  /// to extend built-in widget support with app-specific types.
+  final InteractionConfig interactionConfig;
 }

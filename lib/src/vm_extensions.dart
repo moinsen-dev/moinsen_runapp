@@ -6,6 +6,13 @@ import 'package:moinsen_runapp/src/device_info_collector.dart';
 import 'package:moinsen_runapp/src/error_bucket.dart';
 import 'package:moinsen_runapp/src/error_observer.dart';
 import 'package:moinsen_runapp/src/http_monitor.dart';
+import 'package:moinsen_runapp/src/interaction/element_tree_finder.dart';
+import 'package:moinsen_runapp/src/interaction/gesture_dispatcher.dart';
+import 'package:moinsen_runapp/src/interaction/interaction_config.dart';
+import 'package:moinsen_runapp/src/interaction/scroll_simulator.dart';
+import 'package:moinsen_runapp/src/interaction/text_input_simulator.dart';
+import 'package:moinsen_runapp/src/interaction/widget_finder.dart';
+import 'package:moinsen_runapp/src/interaction/widget_matcher.dart';
 import 'package:moinsen_runapp/src/lifecycle_observer.dart';
 import 'package:moinsen_runapp/src/log_buffer.dart';
 import 'package:moinsen_runapp/src/navigator_observer.dart';
@@ -123,6 +130,129 @@ void registerMoinsenExtensions({
       );
     },
   );
+}
+
+/// Register interaction-related VM Service extensions.
+///
+/// Adds `ext.moinsen.getInteractiveElements`, `ext.moinsen.tap`,
+/// `ext.moinsen.enterText`, and `ext.moinsen.scrollTo`.
+/// Only call this when `enableInteraction` is true.
+void registerInteractionExtensions({
+  required InteractionConfig interactionConfig,
+}) {
+  final config = interactionConfig;
+  final treeFinder = ElementTreeFinder(config);
+  final widgetFinder = WidgetFinder(config);
+  final gestureDispatcher = GestureDispatcher();
+  final textInputSimulator = TextInputSimulator(widgetFinder);
+  final scrollSimulator = ScrollSimulator(
+    gestureDispatcher,
+    widgetFinder,
+  );
+
+  developer.registerExtension(
+    'ext.moinsen.getInteractiveElements',
+    (method, params) async => developer.ServiceExtensionResponse.result(
+      handleGetInteractiveElements(treeFinder),
+    ),
+  );
+
+  developer.registerExtension(
+    'ext.moinsen.tap',
+    (method, params) async {
+      return developer.ServiceExtensionResponse.result(
+        await handleTap(
+          params,
+          gestureDispatcher,
+          widgetFinder,
+          config,
+        ),
+      );
+    },
+  );
+
+  developer.registerExtension(
+    'ext.moinsen.enterText',
+    (method, params) async {
+      return developer.ServiceExtensionResponse.result(
+        await handleEnterText(
+          params,
+          textInputSimulator,
+          config,
+        ),
+      );
+    },
+  );
+
+  developer.registerExtension(
+    'ext.moinsen.scrollTo',
+    (method, params) async {
+      return developer.ServiceExtensionResponse.result(
+        await handleScrollTo(
+          params,
+          scrollSimulator,
+          config,
+        ),
+      );
+    },
+  );
+}
+
+/// Handler for ext.moinsen.getInteractiveElements.
+String handleGetInteractiveElements(ElementTreeFinder treeFinder) {
+  final elements = treeFinder.findInteractiveElements();
+  return jsonEncode({
+    'elements': elements.map((e) => e.toJson()).toList(),
+    'count': elements.length,
+  });
+}
+
+/// Handler for ext.moinsen.tap.
+Future<String> handleTap(
+  Map<String, String> params,
+  GestureDispatcher gestureDispatcher,
+  WidgetFinder widgetFinder,
+  InteractionConfig config,
+) async {
+  try {
+    final matcher = WidgetMatcher.fromParams(params);
+    await gestureDispatcher.tap(matcher, widgetFinder, config);
+    return jsonEncode({'success': true});
+  } on Object catch (e) {
+    return jsonEncode({'success': false, 'error': e.toString()});
+  }
+}
+
+/// Handler for ext.moinsen.enterText.
+Future<String> handleEnterText(
+  Map<String, String> params,
+  TextInputSimulator textInputSimulator,
+  InteractionConfig config,
+) async {
+  try {
+    final input = params['input'] ?? '';
+    final matcherParams = Map<String, String>.from(params)..remove('input');
+    final matcher = WidgetMatcher.fromParams(matcherParams);
+    await textInputSimulator.enterText(matcher, input, config);
+    return jsonEncode({'success': true});
+  } on Object catch (e) {
+    return jsonEncode({'success': false, 'error': e.toString()});
+  }
+}
+
+/// Handler for ext.moinsen.scrollTo.
+Future<String> handleScrollTo(
+  Map<String, String> params,
+  ScrollSimulator scrollSimulator,
+  InteractionConfig config,
+) async {
+  try {
+    final matcher = WidgetMatcher.fromParams(params);
+    await scrollSimulator.scrollUntilVisible(matcher, config);
+    return jsonEncode({'success': true});
+  } on Object catch (e) {
+    return jsonEncode({'success': false, 'error': e.toString()});
+  }
 }
 
 /// Handler for ext.moinsen.getErrors — exported for testability.

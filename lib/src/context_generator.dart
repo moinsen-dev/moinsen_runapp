@@ -24,6 +24,7 @@ String generateContext({
   List<Map<String, dynamic>>? networkRequests,
   int? networkErrorCount,
   Map<String, dynamic>? appStates,
+  List<Map<String, dynamic>>? interactiveElements,
 }) {
   final buffer = StringBuffer()
     ..writeln('# App Context Report')
@@ -55,6 +56,25 @@ String generateContext({
       )
       ..writeln('```')
       ..writeln();
+  }
+
+  // Interactive elements section
+  if (interactiveElements != null && interactiveElements.isNotEmpty) {
+    buffer
+      ..writeln(
+        '## Interactive Elements (${interactiveElements.length})',
+      )
+      ..writeln()
+      ..writeln('| Type | Key | Text | Visible |')
+      ..writeln('|------|-----|------|---------|');
+    for (final el in interactiveElements) {
+      final type = el['type'] ?? '';
+      final key = el['key'] ?? '-';
+      final text = _truncate((el['text'] ?? '-') as String, 40);
+      final visible = el['visible'] == true ? 'yes' : 'no';
+      buffer.writeln('| $type | $key | $text | $visible |');
+    }
+    buffer.writeln();
   }
 
   // Lifecycle section
@@ -196,8 +216,24 @@ String generateContext({
     ..writeln('- `hot reload` / `hot restart` — apply code changes')
     ..writeln('- `ext.moinsen.screenshot` — capture current screen')
     ..writeln('- `ext.moinsen.clearErrors` — reset error state')
-    ..writeln('- `ext.moinsen.getState` — query registered app state')
-    ..writeln();
+    ..writeln('- `ext.moinsen.getState` — query registered app state');
+  if (interactiveElements != null) {
+    buffer
+      ..writeln(
+        '- `ext.moinsen.tap` — tap element by key/text/type/coords',
+      )
+      ..writeln(
+        '- `ext.moinsen.enterText` — type into text field',
+      )
+      ..writeln(
+        '- `ext.moinsen.scrollTo` — scroll until element visible',
+      )
+      ..writeln(
+        '- `ext.moinsen.getInteractiveElements`'
+        ' — list all interactive elements',
+      );
+  }
+  buffer.writeln();
 
   return buffer.toString();
 }

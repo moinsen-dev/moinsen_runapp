@@ -11,6 +11,10 @@ export 'src/device_info_collector.dart';
 export 'src/error_entry.dart';
 export 'src/error_observer.dart';
 export 'src/http_monitor.dart' show HttpRecord, MoinsenHttpMonitor;
+export 'src/interaction/element_tree_finder.dart' show ElementTreeFinder;
+export 'src/interaction/interaction_config.dart' show InteractionConfig;
+export 'src/interaction/interactive_element.dart'
+    show ElementBounds, InteractiveElement;
 export 'src/lifecycle_observer.dart';
 export 'src/navigator_observer.dart';
 export 'src/prompt_generator.dart'

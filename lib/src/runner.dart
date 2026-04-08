@@ -215,6 +215,13 @@ void moinsenRunApp({
           observer: observer,
           logBuffer: logBuffer,
         );
+
+        // 6b. Register interaction extensions (opt-in).
+        if (config.enableInteraction) {
+          registerInteractionExtensions(
+            interactionConfig: config.interactionConfig,
+          );
+        }
       }
 
       // 6. Override ErrorWidget.builder for inline widget errors.

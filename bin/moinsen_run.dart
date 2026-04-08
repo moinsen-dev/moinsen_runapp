@@ -4,6 +4,8 @@ import 'package:args/command_runner.dart';
 import 'package:moinsen_runapp/src/cli/commands/analyze_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/context_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/device_command.dart';
+import 'package:moinsen_runapp/src/cli/commands/elements_command.dart';
+import 'package:moinsen_runapp/src/cli/commands/enter_text_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/errors_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/inspect_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/lifecycle_command.dart';
@@ -15,10 +17,12 @@ import 'package:moinsen_runapp/src/cli/commands/reload_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/restart_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/route_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/screenshot_command.dart';
+import 'package:moinsen_runapp/src/cli/commands/scroll_to_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/start_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/state_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/status_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/stop_command.dart';
+import 'package:moinsen_runapp/src/cli/commands/tap_command.dart';
 
 Future<void> main(List<String> args) async {
   final runner =
@@ -39,12 +43,16 @@ Future<void> main(List<String> args) async {
         ..addCommand(AnalyzeCommand())
         ..addCommand(ContextCommand())
         ..addCommand(DeviceCommand())
+        ..addCommand(ElementsCommand())
+        ..addCommand(EnterTextCommand())
         ..addCommand(InspectCommand())
         ..addCommand(LifecycleCommand())
         ..addCommand(NetworkCommand())
         ..addCommand(RouteCommand())
         ..addCommand(ScreenshotCommand())
-        ..addCommand(StopCommand());
+        ..addCommand(ScrollToCommand())
+        ..addCommand(StopCommand())
+        ..addCommand(TapCommand());
 
   try {
     // Default to 'start' when no subcommand given.
