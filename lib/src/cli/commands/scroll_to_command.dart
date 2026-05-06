@@ -3,13 +3,19 @@ import 'dart:io';
 
 import 'package:moinsen_runapp/src/cli/commands/vm_command.dart';
 import 'package:moinsen_runapp/src/cli/vm_service_client.dart';
+import 'package:moinsen_runapp/src/interaction/retry_strategy.dart';
 
 /// Scroll until a target element becomes visible.
 class ScrollToCommand extends VmCommand {
   ScrollToCommand() {
     argParser
       ..addOption('key', help: 'ValueKey<String> of the target widget')
-      ..addOption('text', help: 'Text content of the target widget');
+      ..addOption('text', help: 'Text content of the target widget')
+      ..addFlag(
+        'no-retry',
+        help: 'Disable retry-with-backoff (test-suite mode).',
+        negatable: false,
+      );
   }
 
   @override
@@ -34,11 +40,19 @@ class ScrollToCommand extends VmCommand {
       );
       exit(1);
     }
+    final noRetry = argResults?['no-retry'] as bool? ?? false;
 
-    final result = await client.callMoinsenWithParams(
-      'ext.moinsen.scrollTo',
-      params: params,
-    );
+    final result = noRetry
+        ? await client.callMoinsenWithParams(
+            'ext.moinsen.scrollTo',
+            params: params,
+          )
+        : await retryWithBackoff(
+            () => client.callMoinsenWithParams(
+              'ext.moinsen.scrollTo',
+              params: params,
+            ),
+          );
     stdout.writeln(
       jsonEncode(
         result ?? <String, dynamic>{'success': false},

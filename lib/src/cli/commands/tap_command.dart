@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:moinsen_runapp/src/cli/commands/vm_command.dart';
 import 'package:moinsen_runapp/src/cli/vm_service_client.dart';
+import 'package:moinsen_runapp/src/interaction/retry_strategy.dart';
 
 /// Tap an element in the running app.
 class TapCommand extends VmCommand {
@@ -12,7 +13,13 @@ class TapCommand extends VmCommand {
       ..addOption('text', help: 'Text content of the widget')
       ..addOption('type', help: 'Runtime type name of the widget')
       ..addOption('x', help: 'X coordinate for direct tap')
-      ..addOption('y', help: 'Y coordinate for direct tap');
+      ..addOption('y', help: 'Y coordinate for direct tap')
+      ..addFlag(
+        'no-retry',
+        help: 'Disable retry-with-backoff. Useful for deterministic test '
+            'suites that want a single fail-fast attempt.',
+        negatable: false,
+      );
   }
 
   @override
@@ -38,10 +45,17 @@ class TapCommand extends VmCommand {
       exit(1);
     }
 
-    final result = await client.callMoinsenWithParams(
-      'ext.moinsen.tap',
-      params: params,
-    );
+    final noRetry = argResults?['no-retry'] as bool? ?? false;
+
+    final result = noRetry
+        ? await client.callMoinsenWithParams('ext.moinsen.tap', params: params)
+        : await retryWithBackoff(
+            () => client.callMoinsenWithParams(
+              'ext.moinsen.tap',
+              params: params,
+            ),
+          );
+
     stdout.writeln(
       jsonEncode(
         result ?? <String, dynamic>{'success': false},

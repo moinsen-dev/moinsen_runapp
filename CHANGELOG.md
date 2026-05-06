@@ -1,3 +1,20 @@
+## 0.7.0 — Foundation: robust agentic Flutter testing
+
+Round of CLI hardening driven by real-world Claude Code session friction (curated_closet, May 2026). The big themes: race-conditions on `tap` after navigation, no inline screenshot for LLM prompts, stale state file after external kill, system permission dialogs blocking automation.
+
+### Added
+
+- **`screenshot --base64`** — Return PNG bytes inline as JSON (`{base64, width, height, bytes}`) instead of writing to disk. Drops the `cp screenshot.png ... | sips ...` dance from agent scripts.
+- **`await-route <path> [--timeout 5s] [--startsWith]`** — Poll the running app's current route until it matches, then exit. Unblocks scripts that tap a navigation button and need to wait for the destination route to settle.
+- **`await-element [--key|--text] [--timeout 5s]`** — Poll the interactive element list until a target widget is present and visible. Companion to `await-route` for when the route already matches but the widget tree is mid-rebuild.
+- **`pregrant`** — Pre-approve iOS Simulator privacy permissions via `xcrun simctl privacy`. Camera/Location/Photos/Microphone dialogs never appear, removing the #1 native-dialog blocker for automated onboarding tests. Auto-detects UDID from `.moinsen_run.json` and bundle-id from `ios/Runner.xcodeproj`.
+- **`start --device <id>` / `-d`** — Direct flag, no more `moinsen_run start -- -d <id>` passthrough dance. The `--`-passthrough still works for ad-hoc args.
+- **`tap` / `enter-text` / `scroll-to` retry-with-backoff** — 3 attempts, exponential backoff (200ms → 400ms → 800ms, total ≤1.5s) on `KeyMatcher: not found`-class errors. Solves the silent-fail-after-restart class. Opt out per call with `--no-retry`.
+
+### Changed
+
+- Stale `.moinsen_run.json` is now detected via `kill -0 <pid>` before each VM-Service call. The state file is auto-cleaned and the user gets a clear "App not running" error instead of a generic "Failed to connect to VM Service".
+
 ## 0.6.3
 
 - Document global installation via `dart pub global activate moinsen_runapp` for `moinsen_run` and `moinsen_mcp` executables.

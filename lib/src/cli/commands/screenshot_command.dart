@@ -19,6 +19,12 @@ class ScreenshotCommand extends VmCommand {
         abbr: 's',
         help: 'Pixel ratio for the screenshot (0 = device default).',
         defaultsTo: '0',
+      )
+      ..addFlag(
+        'base64',
+        help: 'Return PNG bytes inline as base64 instead of writing to disk. '
+            'Useful when piping a screenshot into an LLM prompt.',
+        negatable: false,
       );
   }
 
@@ -36,6 +42,7 @@ class ScreenshotCommand extends VmCommand {
           argResults?['scale'] as String? ?? '0',
         ) ??
         0;
+    final inlineBase64 = argResults?['base64'] as bool? ?? false;
 
     final result = await client.callMoinsenWithParams(
       'ext.moinsen.screenshot',
@@ -52,6 +59,19 @@ class ScreenshotCommand extends VmCommand {
     }
 
     final base64Data = result['screenshot'] as String;
+
+    if (inlineBase64) {
+      stdout.writeln(
+        jsonEncode({
+          'base64': base64Data,
+          'width': result['width'],
+          'height': result['height'],
+          'bytes': base64Decode(base64Data).length,
+        }),
+      );
+      return;
+    }
+
     final bytes = base64Decode(base64Data);
     final file = File(path);
     await file.writeAsBytes(bytes);

@@ -2,6 +2,8 @@ import 'dart:io';
 
 import 'package:args/command_runner.dart';
 import 'package:moinsen_runapp/src/cli/commands/analyze_command.dart';
+import 'package:moinsen_runapp/src/cli/commands/await_element_command.dart';
+import 'package:moinsen_runapp/src/cli/commands/await_route_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/context_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/device_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/elements_command.dart';
@@ -13,6 +15,7 @@ import 'package:moinsen_runapp/src/cli/commands/lifecycle_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/logs_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/navigate_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/network_command.dart';
+import 'package:moinsen_runapp/src/cli/commands/pregrant_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/prompt_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/reload_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/restart_command.dart';
@@ -42,6 +45,8 @@ Future<void> main(List<String> args) async {
         ..addCommand(RestartCommand())
         ..addCommand(StateCommand())
         ..addCommand(AnalyzeCommand())
+        ..addCommand(AwaitElementCommand())
+        ..addCommand(AwaitRouteCommand())
         ..addCommand(ContextCommand())
         ..addCommand(DeviceCommand())
         ..addCommand(ElementsCommand())
@@ -50,6 +55,7 @@ Future<void> main(List<String> args) async {
         ..addCommand(InstallSkillCommand())
         ..addCommand(LifecycleCommand())
         ..addCommand(NetworkCommand())
+        ..addCommand(PregrantCommand())
         ..addCommand(RouteCommand())
         ..addCommand(ScreenshotCommand())
         ..addCommand(ScrollToCommand())
