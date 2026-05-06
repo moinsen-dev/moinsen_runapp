@@ -1,3 +1,17 @@
+## 0.7.1
+
+### Added
+
+- **`pregrant` Android support.** The command now auto-detects platform from
+  the device id format (36-char hex-with-dashes → iOS UDID, otherwise Android
+  adb serial) and runs `adb -s <serial> shell pm grant <package> <perm>` per
+  service. Service names (`camera`, `location`, `microphone`, ...) are mapped
+  to the right Android permission constant internally; services without an
+  Android counterpart are skipped with a clear note in the result.
+- Auto-detect of Android `applicationId` from `android/app/build.gradle.kts`
+  or `android/app/build.gradle` when `--bundle-id` is omitted (mirrors the
+  iOS bundle-id auto-detection from `ios/Runner.xcodeproj`).
+
 ## 0.7.0 — Foundation: robust agentic Flutter testing
 
 Round of CLI hardening driven by real-world Claude Code session friction (curated_closet, May 2026). The big themes: race-conditions on `tap` after navigation, no inline screenshot for LLM prompts, stale state file after external kill, system permission dialogs blocking automation.
