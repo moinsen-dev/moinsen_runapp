@@ -53,6 +53,26 @@ class MoinsenNavigatorObserver extends NavigatorObserver {
   /// Unmodifiable view of the navigation history.
   List<RouteRecord> get history => List.unmodifiable(_history);
 
+  /// Optional app-provided handler for `ext.moinsen.navigate`.
+  ///
+  /// When set, [pushNamed] delegates here instead of calling
+  /// `Navigator.pushNamed`. Use this if your app uses Router-2.0
+  /// (GoRouter, Beamer, auto_route, ...) where Navigator-1.0 named
+  /// routes are not registered.
+  ///
+  /// Returns `true` if navigation succeeded, `false` otherwise.
+  Future<bool> Function(String route, {Object? arguments})? customPushNamed;
+
+  /// Register a custom navigation handler. See [customPushNamed].
+  // Kept as a method rather than a setter to match the documented API
+  // (`MoinsenNavigatorObserver.instance.registerNavigator(...)`).
+  // ignore: use_setters_to_change_properties
+  void registerNavigator(
+    Future<bool> Function(String route, {Object? arguments}) handler,
+  ) {
+    customPushNamed = handler;
+  }
+
   /// Serialize current state to a JSON-compatible map.
   Map<String, dynamic> toJson() => {
     'currentRoute': currentRoute,
@@ -99,13 +119,30 @@ class MoinsenNavigatorObserver extends NavigatorObserver {
 
   /// Push a named route via the observer's navigator.
   ///
-  /// Returns `true` if navigation succeeded, `false` if the navigator
-  /// is not available (observer not attached to a Navigator).
+  /// If [customPushNamed] is set (via [registerNavigator]), delegates
+  /// to that handler — use this for Router-2.0 apps (GoRouter, Beamer,
+  /// auto_route, ...).
+  ///
+  /// Otherwise calls `Navigator.pushNamed`. Returns `false` if the
+  /// navigator is not available or the named route is not registered
+  /// (Navigator-1.0 throws when `onGenerateRoute` is null).
   Future<bool> pushNamed(String route, {Object? arguments}) async {
+    if (customPushNamed != null) {
+      return customPushNamed!(route, arguments: arguments);
+    }
     final nav = navigator;
     if (nav == null) return false;
-    await nav.pushNamed<void>(route, arguments: arguments);
-    return true;
+    try {
+      await nav.pushNamed<void>(route, arguments: arguments);
+      return true;
+      // Navigator 1.0 named routes not registered (typically a Router 2.0
+      // app without an explicit handler), or any other framework throw
+      // from inside pushNamed. Catch everything so we never propagate
+      // across the VM Service boundary — surface as navigated: false.
+      // ignore: avoid_catches_without_on_clauses
+    } catch (_) {
+      return false;
+    }
   }
 
   /// Pop the current route.

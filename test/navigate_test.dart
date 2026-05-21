@@ -73,5 +73,46 @@ void main() {
 
       expect(result, isFalse);
     });
+
+    test('pushNamed delegates to customPushNamed when registered', () async {
+      final observer = MoinsenNavigatorObserver.instance;
+      String? receivedRoute;
+      Object? receivedArgs;
+
+      observer.registerNavigator((route, {arguments}) async {
+        receivedRoute = route;
+        receivedArgs = arguments;
+        return true;
+      });
+
+      final result = await observer.pushNamed('/login', arguments: {'id': 1});
+
+      expect(result, isTrue);
+      expect(receivedRoute, '/login');
+      expect(receivedArgs, {'id': 1});
+    });
+
+    test('pushNamed honours customPushNamed return value', () async {
+      final observer = MoinsenNavigatorObserver.instance
+        ..registerNavigator((route, {arguments}) async => false);
+
+      final result = await observer.pushNamed('/anywhere');
+
+      expect(result, isFalse);
+    });
+
+    test('handleNavigate uses customPushNamed handler', () async {
+      MoinsenNavigatorObserver.instance.registerNavigator(
+        (route, {arguments}) async => true,
+      );
+
+      final json = await handleNavigate(route: '/dashboard');
+      final data = jsonDecode(json) as Map<String, dynamic>;
+
+      expect(data['navigated'], isTrue);
+      expect(data['action'], 'push');
+      expect(data['route'], '/dashboard');
+      expect(data.containsKey('error'), isFalse);
+    });
   });
 }

@@ -110,6 +110,21 @@ MaterialApp(
 )
 ```
 
+> **Using GoRouter / Beamer / auto_route?** Router-2.0 apps don't register
+> Navigator-1.0 named routes, so `ext.moinsen.navigate` needs a custom
+> handler. Register one once at startup:
+>
+> ```dart
+> MoinsenNavigatorObserver.instance.registerNavigator(
+>   (route, {arguments}) async {
+>     final ctx = rootNavigatorKey.currentContext;
+>     if (ctx == null) return false;
+>     GoRouter.of(ctx).go(route);
+>     return true;
+>   },
+> );
+> ```
+
 ### 3. Log from your app
 
 ```dart
@@ -711,8 +726,9 @@ try {
 | `MoinsenNavigatorObserver.instance` | Shared singleton instance |
 | `currentRoute` | Current route name (or `null`) |
 | `history` | Unmodifiable list of `RouteRecord` entries (last 20) |
-| `pushNamed(route)` | Push a named route via the observer's navigator |
+| `pushNamed(route)` | Push a named route via the observer's navigator (or the custom handler, if registered) |
 | `pop()` | Pop the current route |
+| `registerNavigator(handler)` | Inject a custom push handler — required for Router-2.0 apps (GoRouter, Beamer, ...) |
 
 ### `MoinsenLifecycleObserver`
 

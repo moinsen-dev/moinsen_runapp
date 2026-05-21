@@ -1,3 +1,36 @@
+## 0.7.2
+
+### Fixed
+
+- **`ext.moinsen.navigate` no longer throws on Router-2.0 apps.**
+  `MoinsenNavigatorObserver.pushNamed` previously called
+  `Navigator.pushNamed` unconditionally — apps using GoRouter / Beamer /
+  auto_route don't register `onGenerateRoute`, so the call threw
+  `Navigator.onGenerateRoute was null, but the route named "/..." was
+  referenced.` Errors from the underlying `Navigator.pushNamed` are now
+  caught and surfaced as `navigated: false` to the VM Service caller.
+
+### Added
+
+- **`MoinsenNavigatorObserver.registerNavigator(handler)`** — inject a
+  custom push handler so `ext.moinsen.navigate` works with Router-2.0.
+  For GoRouter:
+
+  ```dart
+  MoinsenNavigatorObserver.instance.registerNavigator(
+    (route, {arguments}) async {
+      final ctx = rootNavigatorKey.currentContext;
+      if (ctx == null) return false;
+      GoRouter.of(ctx).go(route);
+      return true;
+    },
+  );
+  ```
+
+  When set, `pushNamed` delegates to the handler instead of calling
+  `Navigator.pushNamed`. The default behavior is unchanged for
+  Navigator-1.0 apps.
+
 ## 0.7.1
 
 ### Added
