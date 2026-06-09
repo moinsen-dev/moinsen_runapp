@@ -51,6 +51,15 @@ void registerMoinsenExtensions({
     ),
   );
 
+  // Capability handshake: lets a client (DebugDeck, Claude Code) discover the
+  // version + available ext.moinsen.* so it adapts to what this build has.
+  developer.registerExtension(
+    'ext.moinsen.getCapabilities',
+    (method, params) async => developer.ServiceExtensionResponse.result(
+      handleGetCapabilities(),
+    ),
+  );
+
   developer.registerExtension(
     'ext.moinsen.getLogs',
     (method, params) async => developer.ServiceExtensionResponse.result(
@@ -277,6 +286,58 @@ String handleGetInfo(ErrorBucket bucket) {
     'errorCount': bucket.totalCount,
     'uniqueErrors': bucket.uniqueCount,
     'platform': Platform.operatingSystem,
+  });
+}
+
+/// The moinsen_runapp version reported in the capability handshake.
+const moinsenRunappVersion = '0.7.3';
+
+/// The `ext.moinsen.*` extensions this build registers (without the prefix).
+const moinsenExtensions = <String>[
+  'getCapabilities',
+  'getInfo',
+  'getErrors',
+  'clearErrors',
+  'getLogs',
+  'getPrompt',
+  'getState',
+  'getNetwork',
+  'getRoute',
+  'navigate',
+  'getLifecycle',
+  'getDeviceInfo',
+  'getContext',
+  'getInteractiveElements',
+  'tap',
+  'enterText',
+  'scrollTo',
+  'screenshot',
+];
+
+/// Handler for ext.moinsen.getCapabilities — the client handshake. Lets a
+/// client discover the version + available extensions and adapt instead of
+/// probing-by-error. Exported for testability.
+String handleGetCapabilities() {
+  return jsonEncode({
+    'package': 'moinsen_runapp',
+    'version': moinsenRunappVersion,
+    'protocol': 1,
+    'extensions': moinsenExtensions,
+    'features': {
+      'errors': true,
+      'logs': true,
+      'prompt': true,
+      'state': true,
+      'network': true,
+      'route': true,
+      'navigate': true,
+      'lifecycle': true,
+      'deviceInfo': true,
+      'context': true,
+      'interactiveElements': true,
+      'interaction': true, // tap / enterText / scrollTo
+      'screenshot': true,
+    },
   });
 }
 

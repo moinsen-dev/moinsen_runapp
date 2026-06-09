@@ -183,99 +183,159 @@ void moinsenRunApp({
   _globalCatcher = catcher;
   _globalLogBuffer = logBuffer;
 
-  // 2. Run everything inside a guarded zone so that
-  //    ensureInitialized() and runApp() share the same zone.
-  unawaited(
-    catcher.runGuarded(() async {
-      // 3. Ensure binding INSIDE the zone — must match runApp().
-      WidgetsFlutterBinding.ensureInitialized();
+  // 2. Check whether the developer already called ensureInitialized() before
+  //    calling moinsenRunApp. If so, we must NOT create a new zone with
+  //    runZonedGuarded — Flutter's debugCheckZone would fire a zone mismatch
+  //    warning because the binding was initialized in the outer zone but
+  //    runApp would be called inside the new zone.
+  //
+  //    When the binding is NOT yet initialized (the normal case), we wrap
+  //    everything in a guarded zone for the zone-level catch-all.
+  //
+  //    When the binding IS already initialized, we run in the current zone
+  //    and rely on FlutterError.onError + PlatformDispatcher.onError for
+  //    error coverage (the zone safety net is redundant when both handlers
+  //    are active).
+  if (_wasBindingInitialized()) {
+    unawaited(
+      _startApp(
+        catcher: catcher,
+        init: init,
+        child: child,
+        config: config,
+        observer: observer,
+        bucket: bucket,
+        logBuffer: logBuffer,
+      ),
+    );
+  } else {
+    unawaited(
+      catcher.runGuarded(() => _startApp(
+            catcher: catcher,
+            init: init,
+            child: child,
+            config: config,
+            observer: observer,
+            bucket: bucket,
+            logBuffer: logBuffer,
+          )),
+    );
+  }
+}
 
-      // 4. Set up error handler layers 1 & 2.
-      catcher
-        ..setupFlutterErrorHandler()
-        ..setupPlatformDispatcher();
+/// Start the app: initialize the binding, set up error handlers, configure
+/// services, run init callback, then call runApp.
+///
+/// Must be called from the same zone as the binding initialization to prevent
+/// Flutter's debugCheckZone mismatch warning.
+Future<void> _startApp({
+  required ErrorCatcher catcher,
+  required Future<void> Function()? init,
+  required Widget child,
+  required RunAppConfig config,
+  required ErrorObserver observer,
+  required ErrorBucket bucket,
+  required LogBuffer logBuffer,
+}) async {
+  // 3. Ensure binding INSIDE the body — matches runApp()'s zone.
+  WidgetsFlutterBinding.ensureInitialized();
 
-      // 5. Register lifecycle observer for app state tracking.
-      WidgetsBinding.instance.addObserver(MoinsenLifecycleObserver.instance);
+  // 4. Set up error handler layers 1 & 2.
+  catcher
+    ..setupFlutterErrorHandler()
+    ..setupPlatformDispatcher();
 
-      // 5b. Install HTTP monitoring (opt-out via config).
-      if (config.monitorHttp) {
-        MoinsenHttpMonitor.instanceWithCapacity(
-          config.httpBufferCapacity,
-        );
-        HttpOverrides.global = MoinsenHttpOverrides(
-          previous: HttpOverrides.current,
-        );
-      }
+  // 5. Register lifecycle observer for app state tracking.
+  WidgetsBinding.instance.addObserver(MoinsenLifecycleObserver.instance);
 
-      // 6. Register VM Service extensions for CLI/tooling access.
-      if (kDebugMode) {
-        registerMoinsenExtensions(
-          bucket: bucket,
-          observer: observer,
-          logBuffer: logBuffer,
-        );
+  // 5b. Install HTTP monitoring (opt-out via config).
+  if (config.monitorHttp) {
+    MoinsenHttpMonitor.instanceWithCapacity(
+      config.httpBufferCapacity,
+    );
+    HttpOverrides.global = MoinsenHttpOverrides(
+      previous: HttpOverrides.current,
+    );
+  }
 
-        // 6b. Register interaction extensions (opt-in).
-        if (config.enableInteraction) {
-          registerInteractionExtensions(
-            interactionConfig: config.interactionConfig,
-          );
-        }
-      }
+  // 6. Register VM Service extensions for CLI/tooling access.
+  if (kDebugMode) {
+    registerMoinsenExtensions(
+      bucket: bucket,
+      observer: observer,
+      logBuffer: logBuffer,
+    );
 
-      // 6. Override ErrorWidget.builder for inline widget errors.
-      //    Wrapped in Directionality because this widget can render
-      //    anywhere in the tree — including above MaterialApp — where
-      //    no Directionality ancestor exists.
-      ErrorWidget.builder = (details) {
-        return Directionality(
-          textDirection: TextDirection.ltr,
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            color: kDebugMode ? const Color(0xFFFF0000) : Colors.transparent,
-            child: kDebugMode
-                ? Text(
-                    '${details.exception}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                    ),
-                  )
-                : const SizedBox.shrink(),
-          ),
-        );
-      };
-
-      // 7. Set up file logger if configured.
-      if (config.logToFile) {
-        final path = config.logFilePath ?? await _resolveLogPath();
-        if (path != null) {
-          final fileLogger = ErrorFileLogger(filePath: path);
-          await fileLogger.init();
-        }
-      }
-
-      // 8. Execute init callback if provided.
-      //    Errors are caught and logged but NEVER prevent app start.
-      if (init != null) {
-        try {
-          await init();
-        } on Object catch (error, stack) {
-          catcher.handleInitError(error, stack);
-        }
-      }
-
-      // 9. ALWAYS run the app — regardless of init errors.
-      runApp(
-        ErrorBoundaryWidget(
-          observer: observer,
-          config: config,
-          child: child,
-        ),
+    // 6b. Register interaction extensions (opt-in).
+    if (config.enableInteraction) {
+      registerInteractionExtensions(
+        interactionConfig: config.interactionConfig,
       );
-    }),
+    }
+  }
+
+  // 6. Override ErrorWidget.builder for inline widget errors.
+  //    Wrapped in Directionality because this widget can render
+  //    anywhere in the tree — including above MaterialApp — where
+  //    no Directionality ancestor exists.
+  ErrorWidget.builder = (details) {
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Container(
+        padding: const EdgeInsets.all(8),
+        color: kDebugMode ? const Color(0xFFFF0000) : Colors.transparent,
+        child: kDebugMode
+            ? Text(
+                '${details.exception}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                ),
+              )
+            : const SizedBox.shrink(),
+      ),
+    );
+  };
+
+  // 7. Set up file logger if configured.
+  if (config.logToFile) {
+    final path = config.logFilePath ?? await _resolveLogPath();
+    if (path != null) {
+      final fileLogger = ErrorFileLogger(filePath: path);
+      await fileLogger.init();
+    }
+  }
+
+  // 8. Execute init callback if provided.
+  //    Errors are caught and logged but NEVER prevent app start.
+  if (init != null) {
+    try {
+      await init();
+    } on Object catch (error, stack) {
+      catcher.handleInitError(error, stack);
+    }
+  }
+
+  // 9. ALWAYS run the app — regardless of init errors.
+  runApp(
+    ErrorBoundaryWidget(
+      observer: observer,
+      config: config,
+      child: child,
+    ),
   );
+}
+
+/// Returns true if [WidgetsBinding] was already initialized before
+/// [moinsenRunApp] was called (i.e. the developer called
+/// `WidgetsFlutterBinding.ensureInitialized()` themselves).
+bool _wasBindingInitialized() {
+  try {
+    WidgetsBinding.instance;
+    return true;
+  } on Object {
+    return false;
+  }
 }
 
 /// Resolves the log file path using path_provider.

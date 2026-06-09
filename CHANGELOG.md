@@ -1,3 +1,10 @@
+## 0.7.3
+
+- Add `ext.moinsen.getCapabilities` — a capability handshake exposing the package
+  version, the list of available `ext.moinsen.*` extensions, and a feature map.
+  Lets clients (DebugDeck, Claude Code) discover what this build supports and
+  adapt, instead of probing-by-error.
+
 ## 0.7.2
 
 ### Fixed

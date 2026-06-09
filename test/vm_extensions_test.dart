@@ -18,6 +18,24 @@ void main() {
       logBuffer = LogBuffer();
     });
 
+    test('getCapabilities reports version, extensions and features', () {
+      final data = jsonDecode(handleGetCapabilities()) as Map<String, dynamic>;
+
+      expect(data['package'], 'moinsen_runapp');
+      expect(data['version'], moinsenRunappVersion);
+      expect(data['protocol'], 1);
+
+      final exts = (data['extensions'] as List).cast<String>();
+      // Self-describing + a representative spread of the surface.
+      expect(exts, contains('getCapabilities'));
+      expect(exts, containsAll(['getErrors', 'getState', 'getNetwork', 'tap']));
+      expect(exts, equals(moinsenExtensions));
+
+      final features = data['features'] as Map<String, dynamic>;
+      expect(features['network'], isTrue);
+      expect(features['interaction'], isTrue);
+    });
+
     test('getErrors returns empty list when no errors', () {
       final json = handleGetErrors(bucket);
       final data = jsonDecode(json) as Map<String, dynamic>;
