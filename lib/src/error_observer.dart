@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:moinsen_runapp/src/error_bucket.dart';
 import 'package:moinsen_runapp/src/error_entry.dart';
+import 'package:moinsen_runapp/src/moinsen_event.dart';
 
 /// A [ChangeNotifier] that bridges the error bucket to UI widgets.
 ///
@@ -43,6 +44,8 @@ class ErrorObserver extends ChangeNotifier {
       _lastTotalCount = total;
       _lastUniqueCount = unique;
       _scheduleNotification();
+      // Push to subscribed clients (DebugDeck) so they can drop polling.
+      emitMoinsenEvent('error', {'total': total, 'unique': unique});
     }
   }
 

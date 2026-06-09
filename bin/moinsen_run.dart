@@ -9,6 +9,7 @@ import 'package:moinsen_runapp/src/cli/commands/device_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/elements_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/enter_text_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/errors_command.dart';
+import 'package:moinsen_runapp/src/cli/commands/hang_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/inspect_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/install_skill_command.dart';
 import 'package:moinsen_runapp/src/cli/commands/lifecycle_command.dart';
@@ -51,6 +52,7 @@ Future<void> main(List<String> args) async {
         ..addCommand(DeviceCommand())
         ..addCommand(ElementsCommand())
         ..addCommand(EnterTextCommand())
+        ..addCommand(HangCommand())
         ..addCommand(InspectCommand())
         ..addCommand(InstallSkillCommand())
         ..addCommand(LifecycleCommand())

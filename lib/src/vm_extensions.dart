@@ -297,7 +297,7 @@ String handleGetInfo(ErrorBucket bucket) {
 }
 
 /// The moinsen_runapp version reported in the capability handshake.
-const moinsenRunappVersion = '0.7.4';
+const moinsenRunappVersion = '0.7.5';
 
 /// The `ext.moinsen.*` extensions this build registers (without the prefix).
 const moinsenExtensions = <String>[
@@ -346,6 +346,9 @@ String handleGetCapabilities() {
       'interactiveElements': true,
       'interaction': true, // tap / enterText / scrollTo
       'screenshot': true,
+      // Push: postEvent('moinsen', {kind,payload}) on error/route/lifecycle, so
+      // clients can subscribe to the VM Extension stream and drop polling.
+      'events': true,
     },
   });
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:moinsen_runapp/src/moinsen_event.dart';
 
 /// Tracks navigation events for external tooling access.
 ///
@@ -115,6 +116,8 @@ class MoinsenNavigatorObserver extends NavigatorObserver {
         timestamp: DateTime.now(),
       ),
     );
+    // Push to subscribed clients (DebugDeck) so they can drop polling.
+    emitMoinsenEvent('route', {'action': action, 'route': route.settings.name});
   }
 
   /// Push a named route via the observer's navigator.

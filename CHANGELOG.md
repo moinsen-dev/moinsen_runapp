@@ -1,3 +1,12 @@
+## 0.7.5
+
+- Add push events: `postEvent('moinsen', {kind, at, payload})` on a new error,
+  a route change, and a lifecycle transition (kinds `error` / `route` /
+  `lifecycle`). Clients subscribe to the VM Service `Extension` stream filtered
+  to `extensionKind == 'moinsen'` and drop polling. Best-effort — emitting never
+  throws into the host app's hot paths and is a no-op without a VM Service.
+  Advertised as `features.events` in the capability handshake.
+
 ## 0.7.4
 
 - Add `ext.moinsen.getProjectBrain` — the "citizen reads the bus" side of the

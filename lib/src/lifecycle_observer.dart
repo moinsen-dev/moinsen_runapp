@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:moinsen_runapp/src/moinsen_event.dart';
 
 /// Tracks app lifecycle state transitions for LLM context.
 ///
@@ -56,6 +57,9 @@ class MoinsenLifecycleObserver with WidgetsBindingObserver {
         timestamp: DateTime.now(),
       ),
     );
+    // Push to subscribed clients (DebugDeck) so they can drop polling.
+    emitMoinsenEvent(
+        'lifecycle', {'state': state.name, 'previous': previous.name});
   }
 
   /// Serialize current state to a JSON-compatible map.

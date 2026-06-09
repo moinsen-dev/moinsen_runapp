@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:moinsen_runapp/src/error_bucket.dart';
 import 'package:moinsen_runapp/src/error_observer.dart';
 import 'package:moinsen_runapp/src/log_buffer.dart';
+import 'package:moinsen_runapp/src/moinsen_event.dart';
 import 'package:moinsen_runapp/src/vm_extensions.dart';
 
 void main() {
@@ -35,6 +36,15 @@ void main() {
       final features = data['features'] as Map<String, dynamic>;
       expect(features['network'], isTrue);
       expect(features['interaction'], isTrue);
+      expect(features['events'], isTrue);
+    });
+
+    test('emitMoinsenEvent never throws without a VM Service', () {
+      expect(moinsenEventKind, 'moinsen');
+      expect(
+        () => emitMoinsenEvent('error', {'total': 1, 'unique': 1}),
+        returnsNormally,
+      );
     });
 
     test('getProjectBrain finds a manifest above the start dir', () {
