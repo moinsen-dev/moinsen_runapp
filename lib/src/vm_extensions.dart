@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
-import 'dart:io' show Platform;
+import 'dart:io' show Directory, File, Platform;
 
 import 'package:moinsen_runapp/src/device_info_collector.dart';
 import 'package:moinsen_runapp/src/error_bucket.dart';
@@ -96,6 +96,13 @@ void registerMoinsenExtensions({
     'ext.moinsen.getContext',
     (method, params) async => developer.ServiceExtensionResponse.result(
       handleGetContext(bucket, logBuffer),
+    ),
+  );
+
+  developer.registerExtension(
+    'ext.moinsen.getProjectBrain',
+    (method, params) async => developer.ServiceExtensionResponse.result(
+      handleGetProjectBrain(),
     ),
   );
 
@@ -290,7 +297,7 @@ String handleGetInfo(ErrorBucket bucket) {
 }
 
 /// The moinsen_runapp version reported in the capability handshake.
-const moinsenRunappVersion = '0.7.3';
+const moinsenRunappVersion = '0.7.4';
 
 /// The `ext.moinsen.*` extensions this build registers (without the prefix).
 const moinsenExtensions = <String>[
@@ -307,6 +314,7 @@ const moinsenExtensions = <String>[
   'getLifecycle',
   'getDeviceInfo',
   'getContext',
+  'getProjectBrain',
   'getInteractiveElements',
   'tap',
   'enterText',
@@ -334,11 +342,42 @@ String handleGetCapabilities() {
       'lifecycle': true,
       'deviceInfo': true,
       'context': true,
+      'projectBrain': true, // best-effort: reachable only for host-run apps
       'interactiveElements': true,
       'interaction': true, // tap / enterText / scrollTo
       'screenshot': true,
     },
   });
+}
+
+/// Handler for ext.moinsen.getProjectBrain — the "citizen reads the bus" side
+/// of the .moinsen/ convention. Best-effort: looks for `.moinsen/manifest.json`
+/// from the process working directory upward (works for a host-run app such as
+/// `flutter run` on desktop, where CWD is the repo). For sandboxed apps on a
+/// device/emulator the repo is unreachable, so it honestly returns
+/// `{available: false}` and DebugDeck remains the .moinsen/ scribe.
+/// Exported for testability — [start] overrides the search root in tests.
+String handleGetProjectBrain({Directory? start}) {
+  try {
+    var dir = start ?? Directory.current;
+    for (var i = 0; i < 6; i++) {
+      final mf = File('${dir.path}/.moinsen/manifest.json');
+      if (mf.existsSync()) {
+        final manifest = jsonDecode(mf.readAsStringSync());
+        return jsonEncode({
+          'available': true,
+          'path': mf.path,
+          'manifest': manifest,
+        });
+      }
+      final parent = dir.parent;
+      if (parent.path == dir.path) break; // reached filesystem root
+      dir = parent;
+    }
+  } catch (_) {
+    // Unreadable / not JSON / no FS access → fall through to unavailable.
+  }
+  return jsonEncode({'available': false});
 }
 
 /// Handler for ext.moinsen.getLogs — exported for testability.

@@ -1,22 +1,64 @@
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:moinsen_runapp/src/cli/hang_diagnostics.dart';
 import 'package:vm_service/vm_service.dart';
 import 'package:vm_service/vm_service_io.dart';
+
+/// Thrown when a call is attempted after the VM Service connection dropped
+/// (app killed, USB unplugged, `flutter run` exited).
+class VmServiceDisconnectedException implements Exception {
+  const VmServiceDisconnectedException();
+
+  @override
+  String toString() =>
+      'VM Service connection closed (app stopped or device disconnected). '
+      'Reconnect to continue.';
+}
 
 /// Client for communicating with a running Flutter app via VM Service.
 ///
 /// Provides typed access to moinsen extensions and Flutter control
 /// (hot reload, hot restart, widget tree).
 class MoinsenVmClient {
-  MoinsenVmClient._(this._service);
+  MoinsenVmClient._(this._service) {
+    // Detect a dropped connection so subsequent calls fail fast with a clear
+    // error instead of hanging until a socket timeout. The 15s keep-alive
+    // ping (vm_service default) surfaces dead sockets that would otherwise
+    // stay silently half-open across a long agentic session.
+    unawaited(_service.onDone.then((_) => _disconnected = true));
+  }
 
   final VmService _service;
+  bool _disconnected = false;
+
+  /// Whether the underlying VM Service connection is still open.
+  bool get isConnected => !_disconnected;
 
   /// Connect to a running Flutter app's VM Service.
-  static Future<MoinsenVmClient> connect(String uri) async {
+  ///
+  /// [pingInterval] overrides the keep-alive ping (vm_service default 15s)
+  /// that detects dead connections; pass `null` to disable.
+  static Future<MoinsenVmClient> connect(
+    String uri, {
+    Duration? pingInterval = const Duration(seconds: 15),
+  }) async {
     final wsUri = parseVmServiceUri(uri);
-    final service = await vmServiceConnectUri(wsUri);
+    final service = await vmServiceConnectUri(
+      wsUri,
+      pingInterval: pingInterval,
+    );
     return MoinsenVmClient._(service);
+  }
+
+  /// Collect hang/deadlock diagnostics: current stack + async awaiter chain,
+  /// queued microtasks, and overdue timers. See [collectHangDiagnostics].
+  Future<Map<String, dynamic>?> diagnoseHang({
+    Duration timerWatch = const Duration(milliseconds: 1500),
+  }) async {
+    final isolateId = await _mainIsolateId();
+    if (isolateId == null) return null;
+    return collectHangDiagnostics(_service, isolateId, timerWatch: timerWatch);
   }
 
   /// Call a moinsen extension (e.g. 'ext.moinsen.getErrors').
@@ -127,6 +169,7 @@ class MoinsenVmClient {
   }
 
   Future<String?> _mainIsolateId() async {
+    if (_disconnected) throw const VmServiceDisconnectedException();
     final vm = await _service.getVM();
     final isolates = vm.isolates;
     if (isolates == null || isolates.isEmpty) return null;

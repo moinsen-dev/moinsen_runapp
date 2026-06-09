@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:logging/logging.dart' as logging;
+import 'package:moinsen_runapp/src/cli/hang_diagnostics.dart';
 import 'package:vm_service/vm_service.dart';
 import 'package:vm_service/vm_service_io.dart';
 
@@ -38,7 +41,10 @@ class MoinsenConnector {
 
   // -- Connection management --
 
-  Future<void> connect(String uri) async {
+  Future<void> connect(
+    String uri, {
+    Duration? pingInterval = const Duration(seconds: 15),
+  }) async {
     if (isConnected) {
       _logger.warning('Already connected, disconnecting first');
       await disconnect();
@@ -48,7 +54,24 @@ class MoinsenConnector {
 
     try {
       final wsUri = _toWebSocketUri(uri);
-      _service = await vmServiceConnectUri(wsUri);
+      final service = await vmServiceConnectUri(
+        wsUri,
+        pingInterval: pingInterval,
+      );
+      _service = service;
+      // Reset connection state if the socket drops (app killed, device
+      // unplugged) so isConnected flips to false and the next tool call
+      // reports a clean "not connected" instead of hanging. The keep-alive
+      // ping (default 15s) detects dead sockets in long agentic sessions.
+      unawaited(
+        service.onDone.then((_) {
+          if (identical(_service, service)) {
+            _logger.warning('VM service connection closed');
+            _service = null;
+            _isolateId = null;
+          }
+        }),
+      );
       _isolateId = await _findMoinsenIsolate();
       _logger.info('Connected to isolate: $_isolateId');
     } catch (err) {
@@ -57,6 +80,19 @@ class MoinsenConnector {
       _logger.severe('Failed to connect', err);
       rethrow;
     }
+  }
+
+  /// Collect hang/deadlock diagnostics: current stack + async awaiter chain,
+  /// queued microtasks, and overdue timers. See [collectHangDiagnostics].
+  Future<Map<String, dynamic>> diagnoseHang({
+    Duration timerWatch = const Duration(milliseconds: 1500),
+  }) async {
+    _ensureConnected();
+    return collectHangDiagnostics(
+      _service!,
+      _isolateId!,
+      timerWatch: timerWatch,
+    );
   }
 
   Future<void> disconnect() async {

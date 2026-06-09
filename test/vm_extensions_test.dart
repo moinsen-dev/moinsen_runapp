@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:moinsen_runapp/src/error_bucket.dart';
@@ -34,6 +35,36 @@ void main() {
       final features = data['features'] as Map<String, dynamic>;
       expect(features['network'], isTrue);
       expect(features['interaction'], isTrue);
+    });
+
+    test('getProjectBrain finds a manifest above the start dir', () {
+      final tmp = Directory.systemTemp.createTempSync('mrb_brain_');
+      addTearDown(() => tmp.deleteSync(recursive: true));
+      Directory('${tmp.path}/.moinsen').createSync();
+      File('${tmp.path}/.moinsen/manifest.json')
+          .writeAsStringSync('{"identity":{"name":"demo"}}');
+      final nested = Directory('${tmp.path}/app/lib')..createSync(recursive: true);
+
+      final data = jsonDecode(handleGetProjectBrain(start: nested))
+          as Map<String, dynamic>;
+
+      expect(data['available'], isTrue);
+      expect(data['path'], endsWith('.moinsen/manifest.json'));
+      expect(
+        ((data['manifest'] as Map)['identity'] as Map)['name'],
+        'demo',
+      );
+    });
+
+    test('getProjectBrain reports unavailable when no manifest is reachable', () {
+      final tmp = Directory.systemTemp.createTempSync('mrb_nobrain_');
+      addTearDown(() => tmp.deleteSync(recursive: true));
+
+      final data = jsonDecode(handleGetProjectBrain(start: tmp))
+          as Map<String, dynamic>;
+
+      expect(data['available'], isFalse);
+      expect(data.containsKey('manifest'), isFalse);
     });
 
     test('getErrors returns empty list when no errors', () {

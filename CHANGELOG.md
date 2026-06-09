@@ -1,3 +1,12 @@
+## 0.7.4
+
+- Add `ext.moinsen.getProjectBrain` — the "citizen reads the bus" side of the
+  `.moinsen/` convention. Best-effort: searches from the process working
+  directory upward for `.moinsen/manifest.json` and returns it (works for a
+  host-run app, e.g. `flutter run` on desktop). Sandboxed apps on a
+  device/emulator honestly return `{available: false}`; DebugDeck remains the
+  host-side `.moinsen/` scribe.
+
 ## 0.7.3
 
 - Add `ext.moinsen.getCapabilities` — a capability handshake exposing the package

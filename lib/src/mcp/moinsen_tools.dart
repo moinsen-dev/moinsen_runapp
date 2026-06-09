@@ -450,6 +450,39 @@ void registerMoinsenTools(McpServer server, MoinsenConnector connector) {
         }
       },
     )
+    ..registerTool(
+      'diagnose_hang',
+      description:
+          'Diagnose why the app appears frozen or stuck (async deadlock, '
+          'microtask flood, timer starvation). Returns the current execution '
+          'stack and async awaiter chain, the queued microtask backlog, and '
+          'any overdue timers observed during a short watch window. '
+          'Use when the UI is unresponsive but no error was thrown.',
+      annotations: const ToolAnnotations(
+        title: 'Diagnose Hang',
+        readOnlyHint: true,
+      ),
+      inputSchema: ToolInputSchema(
+        properties: {
+          'timerWatchMs': JsonSchema.number(
+            description:
+                'How long (ms) to watch for overdue timers. '
+                'Default 1500. Set 0 to skip the timer watch.',
+          ),
+        },
+      ),
+      callback: (args, extra) async {
+        try {
+          final ms = (args['timerWatchMs'] as num?)?.toInt() ?? 1500;
+          final result = await connector.diagnoseHang(
+            timerWatch: Duration(milliseconds: ms),
+          );
+          return _json(result);
+        } on Object catch (e) {
+          return _error('$e');
+        }
+      },
+    )
     // -- Composite tools --
     ..registerTool(
       'observe',
